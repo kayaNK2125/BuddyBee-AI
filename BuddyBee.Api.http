@@ -1,0 +1,8 @@
+@BuddyBee.Api_HostAddress = http://localhost:5168
+
+POST https://localhost:7177/api/chat
+Content-Type: application/json
+
+{}
+
+###
