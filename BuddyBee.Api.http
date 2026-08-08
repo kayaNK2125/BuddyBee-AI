@@ -3,6 +3,8 @@
 POST https://localhost:7177/api/chat
 Content-Type: application/json
 
-{}
+{
+    "message": "Good morning BuddyBee you are my AI"
+}
 
 ###
