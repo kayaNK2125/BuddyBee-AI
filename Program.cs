@@ -1,11 +1,26 @@
+using BuddyBee.Api.Configuration;
 using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<MongoDbSettings>(
+    builder.Configuration.GetSection("MongoDb"));
+
+builder.Services.AddSingleton<MongoDbService>();
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options => //Let this frontend send requests to my API
+{
+    options.AddPolicy("BuddyBeeFrontend", policy =>
+    {
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 builder.Services.AddScoped<IAIService, AIService>(); //if part of project want to use IAIService, it will use AIService implementation (Dependency Injection)
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -20,6 +35,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("BuddyBeeFrontend");
 
 app.UseAuthorization();
 
