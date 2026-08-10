@@ -72,6 +72,12 @@
                 .input-area button:hover {
                     opacity: 0.9;
                 }
+        .provider {
+            display: block;
+            margin-top: 5px;
+            font-size: 11px;
+            opacity: 0.5;
+        }
     </style>
 </head>
 
@@ -145,7 +151,10 @@
 
                 const data = await response.json();
 
-                addMessage("BuddyBee", data.reply);
+                addMessage(
+                    "BuddyBee",
+                    `${data.reply}<small class="provider">via ${data.provider}</small>`
+                );
 
 
             } catch (error) {

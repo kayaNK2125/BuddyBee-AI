@@ -5,8 +5,7 @@ using Google.GenAI.Types;
 
 namespace BuddyBee.Api.Services
 {
-
-    public class AIService : IAIService
+    public class GeminiProvider : IAIProvider // IAIProvider is an interface that defines the contract for AI providers in the application. It likely includes methods for generating replies, handling messages, and other AI-related functionalities.
     {
         private readonly Client _client;
 
@@ -63,7 +62,7 @@ You are BuddyBee, not merely a generic chatbot.
 Your job is to help the user think better, build better, and make better decisions.
 """;
 
-        public AIService(IConfiguration configuration)
+        public GeminiProvider(IConfiguration configuration)
         {
             var apiKey = configuration["GEMINI_API_KEY"];
 

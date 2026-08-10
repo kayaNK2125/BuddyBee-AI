@@ -1,5 +1,6 @@
 using BuddyBee.Api.Configuration;
 using BuddyBee.Api.Interfaces;
+using BuddyBee.Api.Provider.Services;
 using BuddyBee.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,8 +22,11 @@ builder.Services.AddCors(options => //Let this frontend send requests to my API
             .AllowAnyMethod();
     });
 });
-builder.Services.AddScoped<IAIService, AIService>(); //if part of project want to use IAIService, it will use AIService implementation (Dependency Injection)
+//builder.Services.AddScoped<IAIService, GeminiProvider>(); //if part of project want to use IAIService, it will use AIService implementation (Dependency Injection)
+builder.Services.AddScoped<GeminiProvider>();
+builder.Services.AddScoped<OpenAIProvider>();
 
+builder.Services.AddScoped<IAIService, AIRouter>();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 

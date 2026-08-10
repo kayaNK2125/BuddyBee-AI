@@ -3,6 +3,7 @@ using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
 using BuddyBee.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using static Google.Apis.Requests.BatchRequest;
 
 
 namespace BuddyBee.Api.Controllers
@@ -40,27 +41,27 @@ namespace BuddyBee.Api.Controllers
             request.ConversationId
              );
 
-            var reply = await _aiService.GenerateReply(
-            request.Message,
-             history
-                );
+            var response = await _aiService.GenerateReply(
+    request.Message,
+    history);
 
             var botMessage = new Message
             {
                 Id = Guid.NewGuid().ToString(),
                 ConversationId = request.ConversationId,
-                Text = reply,
+                Text = response.Reply,
                 Sender = "BuddyBee",
                 Time = DateTime.UtcNow
             };
 
             await _mongoDbService.SaveMessage(botMessage);
-           
+
 
             return Ok(new
-            {
-                reply = reply
-            });
+{
+    reply = response.Reply,
+    provider = response.Provider
+});
         }
     }
 }

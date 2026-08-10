@@ -1,4 +1,5 @@
-﻿using BuddyBee.Api.Models;
+﻿using BuddyBee.Api.DTOs;
+using BuddyBee.Api.Models;
 
 namespace BuddyBee.Api.Interfaces
 {
@@ -7,10 +8,14 @@ namespace BuddyBee.Api.Interfaces
         //string GenerateReply(string message); //GenerateReply method takes a string message as input and returns a string reply
         //Task<string> GenerateReply(string message); //This method will eventually give me a string
 
-        Task<string> GenerateReply(
-        string message,
-        List<Message> history
-        );
+        Task<AIResponseDto> GenerateReply(
+            string message,
+            List<Message> history);
+
+        //Task<string> GenerateReply(
+        //string message,
+        //List<Message> history
+        //);
 
     }
 }
