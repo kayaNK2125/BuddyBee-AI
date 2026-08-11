@@ -3,6 +3,7 @@
 using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
 using OpenAI.Responses;
+using BuddyBee.Api.Exceptions;
 
 namespace BuddyBee.Api.Provider.Services
 {
@@ -93,9 +94,20 @@ namespace BuddyBee.Api.Provider.Services
                 }
             }
 
-            var response = await _client.CreateResponseAsync(options);
+            try
+            {
+                var response = await _client.CreateResponseAsync(options);
 
-            return response.Value.GetOutputText();
+                return response.Value.GetOutputText();
+            }
+            catch (Exception ex)
+            {
+                throw new AIProviderException(
+                    "OpenAI",
+                    "OpenAI failed to generate a response.",
+                    ex
+                );
+            }
         }
     }
 }

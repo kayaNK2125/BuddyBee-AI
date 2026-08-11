@@ -2,6 +2,7 @@
 using BuddyBee.Api.Models;
 using Google.GenAI;
 using Google.GenAI.Types;
+using BuddyBee.Api.Exceptions;
 
 namespace BuddyBee.Api.Services
 {
@@ -94,26 +95,36 @@ Your job is to help the user think better, build better, and make better decisio
             }
                 });
             }
-
-            var response = await _client.Models.GenerateContentAsync(
-                model: "gemini-3.5-flash-lite",
-                contents: contents,
-                config: new GenerateContentConfig
-                {
-                    SystemInstruction = new Content
+            try
+            {
+                var response = await _client.Models.GenerateContentAsync(
+                   model: "gemini-3.5-flash-lite",
+                    contents: contents,
+                    config: new GenerateContentConfig
                     {
-                        Parts = new List<Part>
+                        SystemInstruction = new Content
                         {
+                            Parts = new List<Part>
+                            {
                     new Part
                     {
                         Text = BuddyBeeInstructions
                     }
+                            }
                         }
                     }
-                }
-            );
+                );
 
-            return response.Text ?? "Gemini returned no response.";
+                return response.Text ?? "Gemini returned no response.";
+            }
+            catch (Exception ex)
+            {
+                throw new AIProviderException(
+                    "Gemini",
+                    "Gemini failed to generate a response.",
+                    ex
+                );
+            }
         }
     }
 }

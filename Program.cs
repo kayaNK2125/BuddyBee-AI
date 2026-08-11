@@ -2,6 +2,7 @@ using BuddyBee.Api.Configuration;
 using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Provider.Services;
 using BuddyBee.Api.Services;
+using BuddyBee.Api.Tools;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,10 @@ builder.Services.AddCors(options => //Let this frontend send requests to my API
     });
 });
 //builder.Services.AddScoped<IAIService, GeminiProvider>(); //if part of project want to use IAIService, it will use AIService implementation (Dependency Injection)
+builder.Services.AddScoped<ITool, TimeTool>();
+builder.Services.AddScoped<ITool, CalculatorTool>();
+builder.Services.AddScoped<ToolRegistry>();
+
 builder.Services.AddScoped<GeminiProvider>();
 builder.Services.AddScoped<OpenAIProvider>();
 
