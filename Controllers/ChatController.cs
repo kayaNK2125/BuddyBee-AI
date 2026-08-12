@@ -1,4 +1,5 @@
-﻿using BuddyBee.Api.DTOs;
+﻿using System.Numerics;
+using BuddyBee.Api.DTOs;
 using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
 using BuddyBee.Api.Services;
@@ -58,6 +59,21 @@ namespace BuddyBee.Api.Controllers
             var result = await tool.ExecuteAsync(arguments);
 
             return Ok(result);
+        }
+
+        [HttpGet("test-big-number")]
+        public IActionResult TestBigNumber(
+    [FromServices] MathEngine mathEngine)
+        {
+            var a = BigInteger.Parse(
+                "999999999999999999999999999999999999999999999999999999");
+
+            var b = BigInteger.Parse(
+                "888888888888888888888888888888888888888888888888888888");
+
+            var result = mathEngine.Multiply(a, b);
+
+            return Ok(result.ToString());
         }
 
 

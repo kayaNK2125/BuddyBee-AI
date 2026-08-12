@@ -9,6 +9,7 @@ namespace BuddyBee.Api.Services
     public class GeminiProvider : IAIProvider // IAIProvider is an interface that defines the contract for AI providers in the application. It likely includes methods for generating replies, handling messages, and other AI-related functionalities.
     {
         private readonly Client _client;
+        private readonly ToolRegistry _toolRegistry;
 
         private const string BuddyBeeInstructions = """
 You are BuddyBee, an AI assistant created by the developer of this application.
@@ -63,7 +64,9 @@ You are BuddyBee, not merely a generic chatbot.
 Your job is to help the user think better, build better, and make better decisions.
 """;
 
-        public GeminiProvider(IConfiguration configuration)
+        public GeminiProvider(
+    IConfiguration configuration,
+    ToolRegistry toolRegistry)
         {
             var apiKey = configuration["GEMINI_API_KEY"];
 
@@ -73,6 +76,7 @@ Your job is to help the user think better, build better, and make better decisio
             }
 
             _client = new Client(apiKey: apiKey);
+            _toolRegistry = toolRegistry;
         }
 
         public async Task<string> GenerateReply(
@@ -95,6 +99,44 @@ Your job is to help the user think better, build better, and make better decisio
             }
                 });
             }
+
+            var calculatorDeclaration = new FunctionDeclaration
+            {
+                Name = "calculate",
+                Description = "Performs basic arithmetic calculations.",
+                Parameters = new Schema
+                {
+                   Type = Google.GenAI.Types.Type.Object,
+                    Properties = new Dictionary<string, Schema>
+                    {
+                        ["operation"] = new Schema
+                        {
+                            Type = Google.GenAI.Types.Type.String,
+                            Description =
+                    "The operation to perform: add, subtract, multiply, or divide."
+                        },
+
+                        ["a"] = new Schema
+                        {
+                            Type = Google.GenAI.Types.Type.Number,
+                            Description = "The first number."
+                        },
+
+                        ["b"] = new Schema
+                        {
+                            Type = Google.GenAI.Types.Type.Number,
+                            Description = "The second number."
+                        }
+                    },
+                    Required = new List<string>
+        {
+            "operation",
+            "a",
+            "b"
+        }
+                }
+            };
+
             try
             {
                 var response = await _client.Models.GenerateContentAsync(
@@ -114,6 +156,10 @@ Your job is to help the user think better, build better, and make better decisio
                         }
                     }
                 );
+
+                Console.WriteLine("===== GEMINI RESPONSE =====");
+                Console.WriteLine(response);
+                Console.WriteLine("==========================");
 
                 return response.Text ?? "Gemini returned no response.";
             }
