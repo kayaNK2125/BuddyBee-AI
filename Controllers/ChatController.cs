@@ -76,6 +76,27 @@ namespace BuddyBee.Api.Controllers
             return Ok(result.ToString());
         }
 
+        [HttpGet("test-rational")]
+        public IActionResult TestRational()
+        {
+            var first = new BigRational(2, 3);
+            var second = new BigRational(5, 7);
+
+            var result = first.Divide(second);
+
+            return Ok(result.ToString());
+        }
+
+        [HttpGet("test-expression")]
+        public IActionResult TestExpression(
+    [FromServices] MathExpressionParser parser)
+        {
+            var result = parser.Evaluate(
+                "85000 * 0.82"
+            );
+
+            return Ok(result.ToString());
+        }
 
         [HttpPost]
         public async Task<IActionResult> Post(ChatRequestDto request)
