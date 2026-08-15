@@ -81,7 +81,7 @@ namespace BuddyBee.Api.Controllers
         {
             var first = new BigRational(2, 3);
             var second = new BigRational(5, 7);
-
+                
             var result = first.Divide(second);
 
             return Ok(result.ToString());
