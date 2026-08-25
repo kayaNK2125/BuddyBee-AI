@@ -1,104 +1,129 @@
-﻿namespace BuddyBee.Api.Tools
+﻿using BuddyBee.Api.Services;
+
+namespace BuddyBee.Api.Tools
 {
     public class CalculatorTool : ITool
     {
+        private readonly MathExpressionParser _parser;
+
+        public CalculatorTool(MathExpressionParser parser)
+        {
+            _parser = parser;
+        }
+
         public string Name => "calculate";
 
         public string Description =>
-            "Performs basic arithmetic: add, subtract, multiply, divide.";
+            "Evaluates mathematical expressions exactly, including "
+            + "large numbers, fractions, decimals, percentages, "
+            + "powers, and scientific notation.";
 
         public Task<ToolResult> ExecuteAsync(
             Dictionary<string, object> arguments)
         {
-            // 1. Get the operation
-            if (!arguments.TryGetValue("operation", out var operationValue)) // get the operation from the arguments
+            // =====================================================
+            // 1. GET THE EXPRESSION
+            // =====================================================
+
+            // The AI should now send:
+            //
+            // {
+            //     "expression": "938472 * 827"
+            // }
+            //
+            // instead of:
+            //
+            // operation = multiply
+            // a = 938472
+            // b = 827
+
+            if (!arguments.TryGetValue(
+                    "expression",
+                    out var expressionValue))
             {
-                return Task.FromResult(new ToolResult
-                {
-                    Success = false,
-                    Error = "Missing operation."
-                });
-            }
-
-            string operation = operationValue.ToString()!.ToLower(); // convert the operation to lowercase for consistency
-
-            // 2. Get number A
-            if (!arguments.TryGetValue("a", out var aValue))
-            {
-                return Task.FromResult(new ToolResult
-                {
-                    Success = false,
-                    Error = "Missing first number."
-                });
-            }
-
-            // 3. Get number B
-            if (!arguments.TryGetValue("b", out var bValue))
-            {
-                return Task.FromResult(new ToolResult
-                {
-                    Success = false,
-                    Error = "Missing second number."
-                });
-            }
-
-            // 4. Convert them to numbers
-            if (!double.TryParse(aValue.ToString(), out double a) ||
-                !double.TryParse(bValue.ToString(), out double b))
-            {
-                return Task.FromResult(new ToolResult
-                {
-                    Success = false,
-                    Error = "Invalid numbers."
-                });
-            }
-
-            double result;
-
-            // 5. Perform the operation
-            switch (operation)
-            {
-                case "add":
-                    result = a + b;
-                    break;
-
-                case "subtract":
-                    result = a - b;
-                    break;
-
-                case "multiply":
-                    result = a * b;
-                    break;
-
-                case "divide":
-
-                    if (b == 0)
-                    {
-                        return Task.FromResult(new ToolResult
-                        {
-                            Success = false,
-                            Error = "Cannot divide by zero."
-                        });
-                    }
-
-                    result = a / b;
-                    break;
-
-                default:
-                    return Task.FromResult(new ToolResult
+                return Task.FromResult(
+                    new ToolResult
                     {
                         Success = false,
-                        Error = $"Unknown operation: {operation}"
+                        Output = "",
+                        Error = "Missing expression."
                     });
             }
 
-            // 6. Return successful result
-            return Task.FromResult(new ToolResult
+            string expression =
+                expressionValue?.ToString() ?? "";
+
+
+            // =====================================================
+            // 2. VALIDATE THE EXPRESSION
+            // =====================================================
+
+            if (string.IsNullOrWhiteSpace(expression))
             {
-                Success = true,
-                Output = result.ToString(),
-                Error = ""
-            });
+                return Task.FromResult(
+                    new ToolResult
+                    {
+                        Success = false,
+                        Output = "",
+                        Error = "Expression cannot be empty."
+                    });
+            }
+
+
+            // =====================================================
+            // 3. SEND EXPRESSION TO OUR MATH ENGINE
+            // =====================================================
+
+            try
+            {
+                // IMPORTANT:
+                //
+                // The LLM does NOT calculate the answer here.
+                //
+                // Our MathExpressionParser does it.
+                //
+                // Example:
+                //
+                // "2^100"
+                //
+                // goes into:
+                //
+                // MathExpressionParser
+                //
+                // which uses BigInteger / BigRational
+                // to calculate the exact result.
+
+                var result =
+                    _parser.Evaluate(expression);
+
+
+                // =================================================
+                // 4. RETURN EXACT RESULT
+                // =================================================
+
+                return Task.FromResult(
+                    new ToolResult
+                    {
+                        Success = true,
+                        Output = result.ToString(),
+                        Error = ""
+                    });
+            }
+            catch (Exception ex)
+            {
+                // If the expression is invalid, division by zero
+                // occurs, the exponent is too large, etc.,
+                // return a controlled tool error instead of
+                // crashing BuddyBee.
+
+                return Task.FromResult(
+                    new ToolResult
+                    {
+                        Success = false,
+                        Output = "",
+                        Error = ex.Message
+                    });
+            }
         }
     }
 }

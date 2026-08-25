@@ -92,7 +92,7 @@ namespace BuddyBee.Api.Controllers
     [FromServices] MathExpressionParser parser)
         {
             var result = parser.Evaluate(
-                "85000 * 0.82"
+                "1e-3 * 1e3"
             );
 
             return Ok(result.ToString());

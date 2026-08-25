@@ -1,15 +1,16 @@
-﻿using BuddyBee.Api.Interfaces;
+﻿using BuddyBee.Api.Exceptions;
+using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
+using BuddyBee.Api.Tools;
 using Google.GenAI;
 using Google.GenAI.Types;
-using BuddyBee.Api.Exceptions;
 
 namespace BuddyBee.Api.Services
 {
-    public class GeminiProvider : IAIProvider // IAIProvider is an interface that defines the contract for AI providers in the application. It likely includes methods for generating replies, handling messages, and other AI-related functionalities.
+    public class GeminiProvider : IAIProvider
     {
         private readonly Client _client;
-        private readonly ToolRegistry _toolRegistry;
+        private readonly CalculatorTool _calculator;
 
         private const string BuddyBeeInstructions = """
 You are BuddyBee, an AI assistant created by the developer of this application.
@@ -65,8 +66,8 @@ Your job is to help the user think better, build better, and make better decisio
 """;
 
         public GeminiProvider(
-    IConfiguration configuration,
-    ToolRegistry toolRegistry)
+            IConfiguration configuration,
+            CalculatorTool calculator)
         {
             var apiKey = configuration["GEMINI_API_KEY"];
 
@@ -76,92 +77,372 @@ Your job is to help the user think better, build better, and make better decisio
             }
 
             _client = new Client(apiKey: apiKey);
-            _toolRegistry = toolRegistry;
+            _calculator = calculator;
         }
 
         public async Task<string> GenerateReply(
-    string message,
-    List<Message> history)
+            string message,
+            List<Message> history)
         {
             var contents = new List<Content>();
+
+            // =====================================================
+            // ADD PREVIOUS CONVERSATION HISTORY
+            // =====================================================
 
             foreach (var item in history)
             {
                 contents.Add(new Content
                 {
-                    Role = item.Sender == "User" ? "user" : "model",
+                    Role = item.Sender == "User"
+                        ? "user"
+                        : "model",
+
                     Parts = new List<Part>
-            {
-                new Part
-                {
-                    Text = item.Text
-                }
-            }
+                    {
+                        new Part
+                        {
+                            Text = item.Text
+                        }
+                    }
                 });
             }
+
+            // =====================================================
+            // ADD CURRENT USER MESSAGE
+            // =====================================================
+            //
+            // GenerateReply receives the current message separately
+            // from history, so we must explicitly add it.
+            //
+            // Without this, Gemini may never see the user's
+            // current request.
+            //
+
+            contents.Add(new Content
+            {
+                Role = "user",
+
+                Parts = new List<Part>
+                {
+                    new Part
+                    {
+                        Text = message
+                    }
+                }
+            });
+
+            // =====================================================
+            // CALCULATOR TOOL DECLARATION
+            // =====================================================
 
             var calculatorDeclaration = new FunctionDeclaration
             {
                 Name = "calculate",
-                Description = "Performs basic arithmetic calculations.",
+
+                Description =
+                    "Evaluates a mathematical expression exactly. " +
+                    "Use this for arithmetic, large numbers, fractions, " +
+                    "decimals, percentages, powers, and scientific notation.",
+
                 Parameters = new Schema
                 {
-                   Type = Google.GenAI.Types.Type.Object,
+                    Type = Google.GenAI.Types.Type.Object,
+
                     Properties = new Dictionary<string, Schema>
                     {
-                        ["operation"] = new Schema
+                        ["expression"] = new Schema
                         {
                             Type = Google.GenAI.Types.Type.String,
+
                             Description =
-                    "The operation to perform: add, subtract, multiply, or divide."
-                        },
-
-                        ["a"] = new Schema
-                        {
-                            Type = Google.GenAI.Types.Type.Number,
-                            Description = "The first number."
-                        },
-
-                        ["b"] = new Schema
-                        {
-                            Type = Google.GenAI.Types.Type.Number,
-                            Description = "The second number."
+                                "The complete mathematical expression to calculate. " +
+                                "Example: ((847293 * 928374) - 192837) / 17"
                         }
                     },
+
                     Required = new List<string>
-        {
-            "operation",
-            "a",
-            "b"
-        }
+                    {
+                        "expression"
+                    }
                 }
             };
 
             try
             {
-                var response = await _client.Models.GenerateContentAsync(
-                   model: "gemini-3.5-flash-lite",
-                    contents: contents,
-                    config: new GenerateContentConfig
-                    {
-                        SystemInstruction = new Content
+                // =================================================
+                // SEND REQUEST TO GEMINI
+                // =================================================
+
+                Console.WriteLine(">>> BEFORE GEMINI API CALL");
+
+                var response =
+                    await _client.Models.GenerateContentAsync(
+                        model: "gemini-3.5-flash-lite",
+
+                        contents: contents,
+
+                        config: new GenerateContentConfig
                         {
-                            Parts = new List<Part>
+                            SystemInstruction = new Content
                             {
-                    new Part
-                    {
-                        Text = BuddyBeeInstructions
-                    }
+                                Parts = new List<Part>
+        {
+            new Part
+            {
+                Text = BuddyBeeInstructions
+            }
+        }
+                            },
+
+                            Tools = new List<Tool>
+    {
+        new Tool
+        {
+            FunctionDeclarations = new List<FunctionDeclaration>
+            {
+                calculatorDeclaration
+            }
+        }
+    },
+
+                            ToolConfig = new ToolConfig
+                            {
+                                FunctionCallingConfig = new FunctionCallingConfig
+                                {
+                                    Mode = FunctionCallingConfigMode.Any,
+
+                                    AllowedFunctionNames = new List<string>
+            {
+                "calculate"
+            }
+                                }
                             }
-                        }
-                    }
-                );
+                        });
+
+                Console.WriteLine(">>> AFTER GEMINI API CALL");
+
+                // =================================================
+                // DEBUG GEMINI RESPONSE
+                // =================================================
 
                 Console.WriteLine("===== GEMINI RESPONSE =====");
                 Console.WriteLine(response);
                 Console.WriteLine("==========================");
 
-                return response.Text ?? "Gemini returned no response.";
+                // =================================================
+                // CHECK FOR FUNCTION CALL
+                // =================================================
+
+                var functionCalls = response.FunctionCalls;
+
+                if (functionCalls != null && functionCalls.Count > 0)
+                {
+                    foreach (var functionCall in functionCalls)
+                    {
+                        Console.WriteLine(
+                            $"Gemini requested tool: {functionCall.Name}");
+
+                        // ---------------------------------------------
+                        // Make sure this is our calculator tool
+                        // ---------------------------------------------
+
+                        if (functionCall.Name != "calculate")
+                        {
+                            continue;
+                        }
+
+                        // ---------------------------------------------
+                        // Read the expression Gemini provided
+                        // ---------------------------------------------
+
+                        if (functionCall.Args == null ||
+                            !functionCall.Args.TryGetValue(
+                                "expression",
+                                out var expressionValue))
+                        {
+                            return "Calculator tool call did not contain an expression.";
+                        }
+
+                        string expression =
+                            expressionValue?.ToString() ?? "";
+
+                        Console.WriteLine(
+                            $"Calculator expression: {expression}");
+
+                        // ---------------------------------------------
+                        // Prepare arguments for CalculatorTool
+                        // ---------------------------------------------
+
+                        var arguments = new Dictionary<string, object>
+                        {
+                            ["expression"] = expression
+                        };
+
+                        // ---------------------------------------------
+                        // EXECUTE OUR REAL C# TOOL
+                        // ---------------------------------------------
+
+                        var toolResult =
+                            await _calculator.ExecuteAsync(arguments);
+
+                        Console.WriteLine(
+                            $"Calculator result: {toolResult.Output}");
+
+                        // ---------------------------------------------
+                        // Handle calculator failure
+                        // ---------------------------------------------
+
+                        if (!toolResult.Success)
+                        {
+                            return $"Calculator error: {toolResult.Error}";
+                        }
+
+                        // =================================================
+                        // IMPORTANT:
+                        //
+                        // We now have:
+                        //
+                        // Gemini FunctionCall
+                        //          ↓
+                        // CalculatorTool
+                        //          ↓
+                        // Exact result
+                        //
+                        // But Gemini still doesn't know the result.
+                        //
+                        // We must send the result BACK to Gemini.
+                        // =================================================
+
+
+                        // ---------------------------------------------
+                        // Add Gemini's function-call message to history
+                        // ---------------------------------------------
+                        //
+                        // Gemini needs to see its own previous
+                        // function call before receiving the result.
+                        //
+
+                        if (response.Parts != null)
+                        {
+                            contents.Add(new Content
+                            {
+                                Role = "model",
+                                Parts = response.Parts
+                            });
+                        }
+
+                        // ---------------------------------------------
+                        // Create FunctionResponse
+                        // ---------------------------------------------
+
+                        var functionResponse = new FunctionResponse
+                        {
+                            Name = functionCall.Name,
+
+                            Id = functionCall.Id,
+
+                            Response = new Dictionary<string, object>
+                            {
+                                ["output"] = toolResult.Output
+                            }
+                        };
+
+                        // ---------------------------------------------
+                        // Send the tool result as a user/tool response
+                        // ---------------------------------------------
+
+                        contents.Add(new Content
+                        {
+                            Role = "user",
+
+                            Parts = new List<Part>
+            {
+                new Part
+                {
+                    FunctionResponse = functionResponse
+                }
+            }
+                        });
+
+                        Console.WriteLine(
+                            ">>> SENDING FUNCTION RESPONSE BACK TO GEMINI");
+
+                        // =================================================
+                        // SECOND GEMINI REQUEST
+                        // =================================================
+                        //
+                        // This time we DON'T force a function call.
+                        //
+                        // Gemini already has the calculator result.
+                        // Now it should produce the normal BuddyBee answer.
+                        //
+
+                        var finalResponse =
+                            await _client.Models.GenerateContentAsync(
+                                model: "gemini-3.5-flash-lite",
+
+                                contents: contents,
+
+                                config: new GenerateContentConfig
+                                {
+                                    SystemInstruction = new Content
+                                    {
+                                        Parts = new List<Part>
+                                        {
+                            new Part
+                            {
+                                Text = BuddyBeeInstructions
+                            }
+                                        }
+                                    },
+
+                                    Tools = new List<Tool>
+                                    {
+                        new Tool
+                        {
+                            FunctionDeclarations =
+                                new List<FunctionDeclaration>
+                                {
+                                    calculatorDeclaration
+                                }
+                        }
+                                    },
+
+                                    // IMPORTANT:
+                                    //
+                                    // The first request forced Gemini to call
+                                    // the calculator.
+                                    //
+                                    // The second request must NOT force it.
+                                    //
+                                    ToolConfig = new ToolConfig
+                                    {
+                                        FunctionCallingConfig =
+                                            new FunctionCallingConfig
+                                            {
+                                                Mode =
+                                                    FunctionCallingConfigMode.Auto
+                                            }
+                                    }
+                                });
+
+                        Console.WriteLine(
+                            "===== FINAL GEMINI RESPONSE =====");
+
+                        Console.WriteLine(finalResponse);
+
+                        Console.WriteLine(
+                            "=================================");
+
+                        return finalResponse.Text
+                            ?? $"The calculation result is {toolResult.Output}.";
+                    }
+                }
+
+                return response.Text
+                    ?? "Gemini returned no response.";
+
             }
             catch (Exception ex)
             {
