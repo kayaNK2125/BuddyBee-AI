@@ -9,11 +9,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDb"));
 
+builder.Services.Configure<FishAudioSettings>(
+    builder.Configuration.GetSection("FishAudio"));
+
 builder.Services.AddSingleton<MongoDbService>();
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddCors(options => //Let this frontend send requests to my API
+
+builder.Services.AddCors(options =>
 {
     options.AddPolicy("BuddyBeeFrontend", policy =>
     {
@@ -23,20 +27,27 @@ builder.Services.AddCors(options => //Let this frontend send requests to my API
             .AllowAnyMethod();
     });
 });
-//builder.Services.AddScoped<IAIService, GeminiProvider>(); //if part of project want to use IAIService, it will use AIService implementation (Dependency Injection)
+
 builder.Services.AddScoped<ITool, TimeTool>();
-builder.Services.AddScoped<MathEngine>();
 builder.Services.AddScoped<ITool, CalculatorTool>();
+builder.Services.AddScoped<ITool, SearchTool>();
+
 builder.Services.AddScoped<ToolRegistry>();
+
+builder.Services.AddScoped<MathEngine>();
 builder.Services.AddScoped<MathExpressionParser>();
-builder.Services.AddScoped<MathExpressionParser>();
+
+builder.Services.AddHttpClient<ISearchService, TavilySearchService>();
+
 builder.Services.AddScoped<CalculatorTool>();
 
 builder.Services.AddScoped<GeminiProvider>();
 builder.Services.AddScoped<OpenAIProvider>();
 
 builder.Services.AddScoped<IAIService, AIRouter>();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+builder.Services.AddHttpClient<IVoiceService, FishAudioVoiceService>();
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

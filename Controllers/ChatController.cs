@@ -17,15 +17,18 @@ namespace BuddyBee.Api.Controllers
         private readonly IAIService _aiService;
         private readonly MongoDbService _mongoDbService;
         private readonly ToolRegistry _toolRegistry;
+        private readonly ISearchService _searchService;
 
         public ChatController(
-     IAIService aiService,
-     MongoDbService mongoDbService,
-     ToolRegistry toolRegistry)
+    IAIService aiService,
+    MongoDbService mongoDbService,
+    ToolRegistry toolRegistry,
+    ISearchService searchService)
         {
             _aiService = aiService;
             _mongoDbService = mongoDbService;
             _toolRegistry = toolRegistry;
+            _searchService = searchService;
         }
 
         [HttpGet("test-tool")]
@@ -98,6 +101,32 @@ namespace BuddyBee.Api.Controllers
             return Ok(result.ToString());
         }
 
+        [HttpGet("test-search")]
+        public async Task<IActionResult> TestSearch(
+    [FromQuery] string query)
+        {
+            var result = await _searchService.SearchAsync(query);
+
+            return Ok(result);
+        }
+
+        [HttpGet("test-search-tool")]
+        public async Task<IActionResult> TestSearchTool()
+        {
+            var tool = _toolRegistry.GetTool("search");
+
+            if (tool == null)
+            {
+                return NotFound("Search tool not found.");
+            }
+
+            return Ok(new
+            {
+                tool.Name,
+                tool.Description
+            });
+        }
+
         [HttpPost]
         public async Task<IActionResult> Post(ChatRequestDto request)
         {
@@ -118,7 +147,7 @@ namespace BuddyBee.Api.Controllers
 
             var response = await _aiService.GenerateReply(
     request.Message,
-    history);
+    history.SkipLast(1).ToList());
 
             var botMessage = new Message
             {

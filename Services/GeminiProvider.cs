@@ -4,13 +4,14 @@ using BuddyBee.Api.Models;
 using BuddyBee.Api.Tools;
 using Google.GenAI;
 using Google.GenAI.Types;
+using static Google.Apis.Requests.BatchRequest;
 
 namespace BuddyBee.Api.Services
 {
     public class GeminiProvider : IAIProvider
     {
         private readonly Client _client;
-        private readonly CalculatorTool _calculator;
+        private readonly ToolRegistry _toolRegistry;
 
         private const string BuddyBeeInstructions = """
 You are BuddyBee, an AI assistant created by the developer of this application.
@@ -61,13 +62,30 @@ The user's safety takes priority over blindly following instructions.
 If a request could seriously harm the user or another person, do not simply obey it.
 Explain the risk and provide a safer alternative when possible.
 
+TOOL USAGE:
+
+- Use the calculate tool for mathematical calculations that require reliable or exact arithmetic.
+- Use the search tool when the user needs current, recent, external, or web-based information.
+- Do not use a tool when it is unnecessary.
+
+TOOL RESULTS AND WEB SEARCH:
+
+- When the search tool is used, treat its results as the primary source of truth for current or recent information.
+- Do not answer a current-information question purely from your pretrained knowledge after receiving search results.
+- Use the retrieved result content to construct the answer.
+- Do not invent facts that are not supported by the retrieved results.
+- When search results contain useful sources, mention the relevant source names and provide their URLs when appropriate.
+- If the search results are incomplete or conflicting, say so instead of pretending the information is certain.
+- Distinguish between information retrieved from the web and your own general knowledge.
+- For questions asking what is happening "today", "now", "latest", "recently", or similar, prioritize the retrieved web information.
+
 You are BuddyBee, not merely a generic chatbot.
 Your job is to help the user think better, build better, and make better decisions.
 """;
 
         public GeminiProvider(
             IConfiguration configuration,
-            CalculatorTool calculator)
+            ToolRegistry toolRegistry)
         {
             var apiKey = configuration["GEMINI_API_KEY"];
 
@@ -77,7 +95,7 @@ Your job is to help the user think better, build better, and make better decisio
             }
 
             _client = new Client(apiKey: apiKey);
-            _calculator = calculator;
+            _toolRegistry = toolRegistry;
         }
 
         public async Task<string> GenerateReply(
@@ -111,13 +129,6 @@ Your job is to help the user think better, build better, and make better decisio
             // =====================================================
             // ADD CURRENT USER MESSAGE
             // =====================================================
-            //
-            // GenerateReply receives the current message separately
-            // from history, so we must explicitly add it.
-            //
-            // Without this, Gemini may never see the user's
-            // current request.
-            //
 
             contents.Add(new Content
             {
@@ -133,7 +144,7 @@ Your job is to help the user think better, build better, and make better decisio
             });
 
             // =====================================================
-            // CALCULATOR TOOL DECLARATION
+            // CALCULATOR FUNCTION DECLARATION
             // =====================================================
 
             var calculatorDeclaration = new FunctionDeclaration
@@ -156,8 +167,7 @@ Your job is to help the user think better, build better, and make better decisio
                             Type = Google.GenAI.Types.Type.String,
 
                             Description =
-                                "The complete mathematical expression to calculate. " +
-                                "Example: ((847293 * 928374) - 192837) / 17"
+                                "The complete mathematical expression to calculate."
                         }
                     },
 
@@ -168,280 +178,364 @@ Your job is to help the user think better, build better, and make better decisio
                 }
             };
 
+            // =====================================================
+            // SEARCH FUNCTION DECLARATION
+            // =====================================================
+
+            var searchDeclaration = new FunctionDeclaration
+            {
+                Name = "search",
+
+                Description =
+                    "Searches the internet for current, recent, " +
+                    "external, or factual information.",
+
+                Parameters = new Schema
+                {
+                    Type = Google.GenAI.Types.Type.Object,
+
+                    Properties = new Dictionary<string, Schema>
+                    {
+                        ["query"] = new Schema
+                        {
+                            Type = Google.GenAI.Types.Type.String,
+
+                            Description =
+                                "The search query to send to the internet."
+                        }
+                    },
+
+                    Required = new List<string>
+                    {
+                        "query"
+                    }
+                }
+            };
+
+            // =====================================================
+            // TIME FUNCTION DECLARATION
+            // =====================================================
+
+            var timeDeclaration = new FunctionDeclaration
+            {
+                Name = "get_time",
+
+                Description =
+                    "Returns the current time. Optionally specify an IANA timezone (e.g. 'Asia/Kolkata' for India, 'America/New_York' for US Eastern).",
+
+                Parameters = new Schema
+                {
+                    Type = Google.GenAI.Types.Type.Object,
+
+                    Properties = new Dictionary<string, Schema>
+                    {
+                        ["timezone"] = new Schema
+                        {
+                            Type = Google.GenAI.Types.Type.String,
+
+                            Description =
+                                "Optional IANA timezone identifier. If omitted, returns UTC."
+                        }
+                    },
+
+                    Required = new List<string>
+                    {
+                    }
+                }
+            };
+
+            // =====================================================
+            // REGISTERED GEMINI TOOLS
+            // =====================================================
+
+            var tools = new List<Tool>
+            {
+                new Tool
+                {
+                    FunctionDeclarations =
+                        new List<FunctionDeclaration>
+                        {
+                            calculatorDeclaration,
+                            searchDeclaration,
+                            timeDeclaration
+                        }
+                }
+            };
+
             try
             {
                 // =================================================
-                // SEND REQUEST TO GEMINI
+                // FIRST GEMINI REQUEST
                 // =================================================
+                //
+                // AUTO means Gemini decides whether it needs a tool.
+                //
+                // Normal question → no tool
+                // Math            → calculate
+                // Current info    → search
+                //
 
                 Console.WriteLine(">>> BEFORE GEMINI API CALL");
 
-                var response =
-                    await _client.Models.GenerateContentAsync(
-                        model: "gemini-3.5-flash-lite",
+             var response =
+    await _client.Models.GenerateContentAsync(
+        model: "gemini-3.5-flash-lite",
 
-                        contents: contents,
+        contents: contents,
 
-                        config: new GenerateContentConfig
-                        {
-                            SystemInstruction = new Content
-                            {
-                                Parts = new List<Part>
+        config: new GenerateContentConfig
         {
-            new Part
+            SystemInstruction = new Content
             {
-                Text = BuddyBeeInstructions
-            }
-        }
-                            },
+                Parts = new List<Part>
+                {
+                    new Part
+                    {
+                        Text = BuddyBeeInstructions
+                    }
+                }
+            },
 
-                            Tools = new List<Tool>
-    {
-        new Tool
-        {
-            FunctionDeclarations = new List<FunctionDeclaration>
+            Tools = tools,
+
+            ToolConfig = new ToolConfig
             {
-                calculatorDeclaration
+                FunctionCallingConfig =
+                    new FunctionCallingConfig
+                    {
+                        Mode =
+                            FunctionCallingConfigMode.Auto
+                    }
             }
-        }
-    },
-
-                            ToolConfig = new ToolConfig
-                            {
-                                FunctionCallingConfig = new FunctionCallingConfig
-                                {
-                                    Mode = FunctionCallingConfigMode.Any,
-
-                                    AllowedFunctionNames = new List<string>
-            {
-                "calculate"
-            }
-                                }
-                            }
-                        });
+        });
 
                 Console.WriteLine(">>> AFTER GEMINI API CALL");
 
                 // =================================================
-                // DEBUG GEMINI RESPONSE
+                // TOOL LOOP
                 // =================================================
+                //
+                // Gemini may:
+                //
+                // 1. Answer directly
+                //
+                // OR
+                //
+                // 2. Request one or more tools.
+                //
+                // We execute the requested tools through ToolRegistry.
+                //
 
-                Console.WriteLine("===== GEMINI RESPONSE =====");
-                Console.WriteLine(response);
-                Console.WriteLine("==========================");
+                const int maxToolRounds = 5;
 
-                // =================================================
-                // CHECK FOR FUNCTION CALL
-                // =================================================
-
-                var functionCalls = response.FunctionCalls;
-
-                if (functionCalls != null && functionCalls.Count > 0)
+                for (int round = 0;
+                     round < maxToolRounds;
+                     round++)
                 {
+                    var functionCalls = response.FunctionCalls;
+
+                    // -------------------------------------------------
+                    // No tool requested.
+                    // Gemini has produced the final answer.
+                    // -------------------------------------------------
+
+                    if (functionCalls == null ||
+                        functionCalls.Count == 0)
+                    {
+                        return response.Text
+                            ?? "Gemini returned no response.";
+                    }
+
+                    Console.WriteLine(
+                        $"Gemini requested {functionCalls.Count} tool call(s).");
+
+                    // -------------------------------------------------
+                    // Add Gemini's function-call message.
+                    // -------------------------------------------------
+
+                    if (response.Parts != null)
+                    {
+                        contents.Add(new Content
+                        {
+                            Role = "model",
+                            Parts = response.Parts
+                        });
+                    }
+
+                    // -------------------------------------------------
+                    // Execute every requested tool.
+                    // -------------------------------------------------
+
+                    var functionResponseParts = new List<Part>();
+
                     foreach (var functionCall in functionCalls)
                     {
                         Console.WriteLine(
                             $"Gemini requested tool: {functionCall.Name}");
 
                         // ---------------------------------------------
-                        // Make sure this is our calculator tool
+                        // Find the tool in ToolRegistry.
                         // ---------------------------------------------
 
-                        if (functionCall.Name != "calculate")
+                        if (string.IsNullOrWhiteSpace(functionCall.Name))
                         {
+                            throw new InvalidOperationException(
+                                "Gemini returned a function call without a tool name.");
+                        }
+
+                        var tool =
+                            _toolRegistry.GetTool(functionCall.Name);
+
+                        if (tool == null)
+                        {
+                            Console.WriteLine(
+                                $"Tool not found: {functionCall.Name}");
+
+                            var errorResponse =
+                                new FunctionResponse
+                                {
+                                    Name = functionCall.Name,
+
+                                    Id = functionCall.Id,
+
+                                    Response =
+                                        new Dictionary<string, object>
+                                        {
+                                            ["error"] =
+                                                $"Tool '{functionCall.Name}' was not found."
+                                        }
+                                };
+
+                            functionResponseParts.Add(
+                                new Part
+                                {
+                                    FunctionResponse =
+                                        errorResponse
+                                });
+
                             continue;
                         }
 
                         // ---------------------------------------------
-                        // Read the expression Gemini provided
+                        // Convert Gemini arguments to our tool format.
                         // ---------------------------------------------
 
-                        if (functionCall.Args == null ||
-                            !functionCall.Args.TryGetValue(
-                                "expression",
-                                out var expressionValue))
+                        var arguments =
+                            new Dictionary<string, object>();
+
+                        if (functionCall.Args != null)
                         {
-                            return "Calculator tool call did not contain an expression.";
+                            foreach (var argument in functionCall.Args)
+                            {
+                                arguments[argument.Key] =
+                                    argument.Value;
+                            }
                         }
 
-                        string expression =
-                            expressionValue?.ToString() ?? "";
-
-                        Console.WriteLine(
-                            $"Calculator expression: {expression}");
-
                         // ---------------------------------------------
-                        // Prepare arguments for CalculatorTool
-                        // ---------------------------------------------
-
-                        var arguments = new Dictionary<string, object>
-                        {
-                            ["expression"] = expression
-                        };
-
-                        // ---------------------------------------------
-                        // EXECUTE OUR REAL C# TOOL
+                        // Execute the actual BuddyBee tool.
                         // ---------------------------------------------
 
                         var toolResult =
-                            await _calculator.ExecuteAsync(arguments);
+                            await tool.ExecuteAsync(arguments);
 
                         Console.WriteLine(
-                            $"Calculator result: {toolResult.Output}");
+                            $"Tool result: {toolResult.Output}");
 
                         // ---------------------------------------------
-                        // Handle calculator failure
+                        // Build FunctionResponse.
                         // ---------------------------------------------
 
-                        if (!toolResult.Success)
+                        var responseData =
+                            new Dictionary<string, object>();
+
+                        if (toolResult.Success)
                         {
-                            return $"Calculator error: {toolResult.Error}";
+                            responseData["output"] =
+                                toolResult.Output ?? "";
+                        }
+                        else
+                        {
+                            responseData["error"] =
+                                toolResult.Error ?? "Tool failed.";
                         }
 
-                        // =================================================
-                        // IMPORTANT:
-                        //
-                        // We now have:
-                        //
-                        // Gemini FunctionCall
-                        //          ↓
-                        // CalculatorTool
-                        //          ↓
-                        // Exact result
-                        //
-                        // But Gemini still doesn't know the result.
-                        //
-                        // We must send the result BACK to Gemini.
-                        // =================================================
-
-
-                        // ---------------------------------------------
-                        // Add Gemini's function-call message to history
-                        // ---------------------------------------------
-                        //
-                        // Gemini needs to see its own previous
-                        // function call before receiving the result.
-                        //
-
-                        if (response.Parts != null)
-                        {
-                            contents.Add(new Content
+                        var functionResponse =
+                            new FunctionResponse
                             {
-                                Role = "model",
-                                Parts = response.Parts
-                            });
-                        }
+                                Name = functionCall.Name,
 
-                        // ---------------------------------------------
-                        // Create FunctionResponse
-                        // ---------------------------------------------
+                                Id = functionCall.Id,
 
-                        var functionResponse = new FunctionResponse
-                        {
-                            Name = functionCall.Name,
+                                Response = responseData
+                            };
 
-                            Id = functionCall.Id,
-
-                            Response = new Dictionary<string, object>
-                            {
-                                ["output"] = toolResult.Output
-                            }
-                        };
-
-                        // ---------------------------------------------
-                        // Send the tool result as a user/tool response
-                        // ---------------------------------------------
-
-                        contents.Add(new Content
-                        {
-                            Role = "user",
-
-                            Parts = new List<Part>
-            {
-                new Part
-                {
-                    FunctionResponse = functionResponse
-                }
-            }
-                        });
-
-                        Console.WriteLine(
-                            ">>> SENDING FUNCTION RESPONSE BACK TO GEMINI");
-
-                        // =================================================
-                        // SECOND GEMINI REQUEST
-                        // =================================================
-                        //
-                        // This time we DON'T force a function call.
-                        //
-                        // Gemini already has the calculator result.
-                        // Now it should produce the normal BuddyBee answer.
-                        //
-
-                        var finalResponse =
-                            await _client.Models.GenerateContentAsync(
-                                model: "gemini-3.5-flash-lite",
-
-                                contents: contents,
-
-                                config: new GenerateContentConfig
-                                {
-                                    SystemInstruction = new Content
-                                    {
-                                        Parts = new List<Part>
-                                        {
+                        functionResponseParts.Add(
                             new Part
                             {
-                                Text = BuddyBeeInstructions
-                            }
-                                        }
-                                    },
+                                FunctionResponse =
+                                    functionResponse
+                            });
+                    }
 
-                                    Tools = new List<Tool>
-                                    {
-                        new Tool
-                        {
-                            FunctionDeclarations =
-                                new List<FunctionDeclaration>
-                                {
-                                    calculatorDeclaration
-                                }
-                        }
-                                    },
+                    // =================================================
+                    // SEND ALL TOOL RESULTS BACK TO GEMINI
+                    // =================================================
 
-                                    // IMPORTANT:
-                                    //
-                                    // The first request forced Gemini to call
-                                    // the calculator.
-                                    //
-                                    // The second request must NOT force it.
-                                    //
-                                    ToolConfig = new ToolConfig
-                                    {
-                                        FunctionCallingConfig =
-                                            new FunctionCallingConfig
-                                            {
-                                                Mode =
-                                                    FunctionCallingConfigMode.Auto
-                                            }
-                                    }
-                                });
+                    contents.Add(new Content
+                    {
+                        Role = "user",
 
-                        Console.WriteLine(
-                            "===== FINAL GEMINI RESPONSE =====");
+                        Parts = functionResponseParts
+                    });
 
-                        Console.WriteLine(finalResponse);
+                    Console.WriteLine(
+                        ">>> SENDING FUNCTION RESPONSES BACK TO GEMINI");
 
-                        Console.WriteLine(
-                            "=================================");
+                    // =================================================
+                    // SECOND / NEXT GEMINI REQUEST
+                    // =================================================
+                    //
+                    // Auto again.
+                    //
+                    // Usually Gemini now produces the final answer.
+                    // If it needs another tool, the loop handles it.
+                    //
 
-                        return finalResponse.Text
-                            ?? $"The calculation result is {toolResult.Output}.";
+                    response =
+    await _client.Models.GenerateContentAsync(
+        model: "gemini-3.5-flash-lite",
+
+        contents: contents,
+
+        config: new GenerateContentConfig
+        {
+            SystemInstruction = new Content
+            {
+                Parts = new List<Part>
+                {
+                    new Part
+                    {
+                        Text = BuddyBeeInstructions
                     }
                 }
+            },
 
-                return response.Text
-                    ?? "Gemini returned no response.";
+            Tools = tools,
+
+            ToolConfig = new ToolConfig
+            {
+                FunctionCallingConfig =
+                    new FunctionCallingConfig
+                    {
+                        Mode =
+                            FunctionCallingConfigMode.Auto
+                    }
+            }
+        });
+                }
+
+                return "Tool execution limit reached.";
 
             }
             catch (Exception ex)
@@ -452,6 +546,76 @@ Your job is to help the user think better, build better, and make better decisio
                     ex
                 );
             }
+        }
+
+        // Temporary streaming diagnostic test method
+        public async Task TestStreamingAsync()
+        {
+            Console.WriteLine("=== GEMINI STREAM TEST START ===");
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            bool firstChunkLogged = false;
+
+            var contents = new List<Content>
+            {
+                new Content
+                {
+                    Role = "user",
+                    Parts = new List<Part>
+                    {
+                        new Part
+                        {
+                            Text = "Explain artificial intelligence in four short paragraphs."
+                        }
+                    }
+                }
+            };
+
+            try
+            {
+                var stream = _client.Models.GenerateContentStreamAsync(
+                    model: "gemini-3.5-flash-lite",
+                    contents: contents,
+                    config: new GenerateContentConfig
+                    {
+                        SystemInstruction = new Content
+                        {
+                            Parts = new List<Part>
+                            {
+                                new Part
+                                {
+                                    Text = "You are a helpful assistant."
+                                }
+                            }
+                        }
+                    });
+
+                await foreach (var chunk in stream)
+                {
+                    var text = chunk.Text;
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        if (!firstChunkLogged)
+                        {
+                            firstChunkLogged = true;
+                            Console.WriteLine($"[STREAM CHUNK] First non-empty chunk at {sw.ElapsedMilliseconds}ms: {text}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[STREAM CHUNK] {text}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[STREAM ERROR] {ex.Message}");
+            }
+            finally
+            {
+                sw.Stop();
+            }
+
+            Console.WriteLine($"=== GEMINI STREAM TEST COMPLETE === Total: {sw.ElapsedMilliseconds}ms");
         }
     }
 }
