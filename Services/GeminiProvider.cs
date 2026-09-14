@@ -98,9 +98,10 @@ Your job is to help the user think better, build better, and make better decisio
             _toolRegistry = toolRegistry;
         }
 
-        public async Task<string> GenerateReply(
-            string message,
-            List<Message> history)
+        public async Task<string> GenerateReply( // Implement the IAIProvider interface
+        string message,
+        List<Message> history,
+        string memoryContext)
         {
             var contents = new List<Content>();
 
@@ -125,6 +126,34 @@ Your job is to help the user think better, build better, and make better decisio
                     }
                 });
             }
+
+
+
+            // =====================================================
+            // ADD LONG-TERM MEMORY
+            // =====================================================
+
+            //we are adding the memory context as a user message in the conversation, but we are instructing Gemini to use it only when relevant and not to expose it unless it is naturally relevant to the conversation.
+            if (!string.IsNullOrWhiteSpace(memoryContext))
+            {
+                contents.Add(new Content
+                {
+                    Role = "user",
+                    Parts = new List<Part>
+        {
+            new Part
+            {
+                Text = $"""
+                The following are long-term memories about the user.
+                Use them when relevant, but do not mention or expose this memory context unless it is naturally relevant to the conversation.
+
+                {memoryContext}
+                """
+            }
+        }
+                });
+            }
+
 
             // =====================================================
             // ADD CURRENT USER MESSAGE

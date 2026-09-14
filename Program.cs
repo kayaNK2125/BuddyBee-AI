@@ -3,6 +3,7 @@ using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Provider.Services;
 using BuddyBee.Api.Services;
 using BuddyBee.Api.Tools;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,18 @@ builder.Services.Configure<FishAudioSettings>(
 
 builder.Services.AddSingleton<MongoDbService>();
 // Add services to the container.
+
+builder.Services.AddSingleton<IMongoDatabase>(sp =>
+{
+    var settings = sp
+        .GetRequiredService<
+            Microsoft.Extensions.Options.IOptions<MongoDbSettings>>()
+        .Value;
+
+    var client = new MongoClient(settings.ConnectionString);
+
+    return client.GetDatabase(settings.DatabaseName);
+});
 
 builder.Services.AddControllers();
 
@@ -43,6 +56,8 @@ builder.Services.AddScoped<CalculatorTool>();
 
 builder.Services.AddScoped<GeminiProvider>();
 builder.Services.AddScoped<OpenAIProvider>();
+
+builder.Services.AddScoped<IMemoryService, MemoryService>();
 
 builder.Services.AddScoped<IAIService, AIRouter>();
 

@@ -18,17 +18,20 @@ namespace BuddyBee.Api.Controllers
         private readonly MongoDbService _mongoDbService;
         private readonly ToolRegistry _toolRegistry;
         private readonly ISearchService _searchService;
+        private readonly IMemoryService _memoryService; //memory service for saving and retrieving memories
 
         public ChatController(
     IAIService aiService,
     MongoDbService mongoDbService,
     ToolRegistry toolRegistry,
-    ISearchService searchService)
+    ISearchService searchService,
+    IMemoryService memoryService) //memory service injected into the controller
         {
             _aiService = aiService;
             _mongoDbService = mongoDbService;
             _toolRegistry = toolRegistry;
             _searchService = searchService;
+            _memoryService = memoryService; //memory service initialized
         }
 
         [HttpGet("test-tool")]
@@ -145,9 +148,19 @@ namespace BuddyBee.Api.Controllers
             request.ConversationId
              );
 
-            var response = await _aiService.GenerateReply(
+            var memories = await _memoryService.GetMemories( //this will Retrieve memories for the user
+            request.UserId
+             );
+
+            var memoryContext = string.Join( //this will create a string representation of the memories to be included in the AI prompt
+             "\n",
+             memories.Select(memory => $"- {memory.Text}")
+             );
+
+            var response = await _aiService.GenerateReply( // this will generate a reply from the AI service using the user's message, conversation history, and memory context
     request.Message,
-    history.SkipLast(1).ToList());
+    history.SkipLast(1).ToList(),   
+    memoryContext);
 
             var botMessage = new Message
             {

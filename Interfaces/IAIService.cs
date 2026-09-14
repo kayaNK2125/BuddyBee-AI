@@ -9,8 +9,9 @@ namespace BuddyBee.Api.Interfaces
         //Task<string> GenerateReply(string message); //This method will eventually give me a string
 
         Task<AIResponseDto> GenerateReply(
-            string message,
-            List<Message> history);
+     string message,
+     List<Message> history,
+     string memoryContext); //The memoryContext is a string that contains the context of the conversation, which can be used to provide more relevant responses.
 
         //Task<string> GenerateReply(
         //string message,

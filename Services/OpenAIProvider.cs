@@ -68,14 +68,29 @@ namespace BuddyBee.Api.Provider.Services
             _client = new ResponsesClient(apiKey: apiKey);
         }
 
-        public async Task<string> GenerateReply(
-            string message,
-            List<Message> history)
+        public async Task<string> GenerateReply( // This method generates a reply from the OpenAI model based on the user's message, conversation history, and memory context.
+        string message,
+        List<Message> history,
+        string memoryContext)
+
         {
+            var instructions = BuddyBeeInstructions;
+
+            if (!string.IsNullOrWhiteSpace(memoryContext)) // If there is a memory context, append it to the instructions for the model to use when generating a reply.
+            {
+                instructions += $"""
+
+             LONG-TERM MEMORY ABOUT THE USER:
+             Use these memories when relevant, but do not mention or expose this memory context unless it is naturally relevant to the conversation.
+
+            {memoryContext}
+            """;
+            }
+
             var options = new CreateResponseOptions
             {
                 Model = "gpt-5.4-mini",
-                Instructions = BuddyBeeInstructions
+                Instructions = instructions
             };
 
             foreach (var item in history)

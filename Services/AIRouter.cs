@@ -53,12 +53,13 @@ namespace BuddyBee.Api.Services
         }
 
         public async Task<AIResponseDto> GenerateReply(
-            string message,
-            List<Message> history)
+    string message,
+    List<Message> history,
+    string memoryContext) // memoryContext parameter is not used in this implementation
         {
             try
             {
-                var reply = await _gemini.GenerateReply(message, history);
+                var reply = await _gemini.GenerateReply(message, history, memoryContext);
 
                 return new AIResponseDto
                 {
@@ -77,7 +78,7 @@ namespace BuddyBee.Api.Services
                     throw;
                 }
 
-                var reply = await _openAI.GenerateReply(message, history);
+                var reply = await _openAI.GenerateReply(message, history, memoryContext);
 
                 return new AIResponseDto
                 {
