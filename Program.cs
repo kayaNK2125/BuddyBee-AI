@@ -43,14 +43,12 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<ITool, TimeTool>();
 builder.Services.AddScoped<ITool, CalculatorTool>();
-builder.Services.AddScoped<ITool, SearchTool>();
 
 builder.Services.AddScoped<ToolRegistry>();
 
 builder.Services.AddScoped<MathEngine>();
 builder.Services.AddScoped<MathExpressionParser>();
 
-builder.Services.AddHttpClient<ISearchService, TavilySearchService>();
 
 builder.Services.AddScoped<CalculatorTool>();
 

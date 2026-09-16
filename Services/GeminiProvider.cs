@@ -207,39 +207,6 @@ Your job is to help the user think better, build better, and make better decisio
                 }
             };
 
-            // =====================================================
-            // SEARCH FUNCTION DECLARATION
-            // =====================================================
-
-            var searchDeclaration = new FunctionDeclaration
-            {
-                Name = "search",
-
-                Description =
-                    "Searches the internet for current, recent, " +
-                    "external, or factual information.",
-
-                Parameters = new Schema
-                {
-                    Type = Google.GenAI.Types.Type.Object,
-
-                    Properties = new Dictionary<string, Schema>
-                    {
-                        ["query"] = new Schema
-                        {
-                            Type = Google.GenAI.Types.Type.String,
-
-                            Description =
-                                "The search query to send to the internet."
-                        }
-                    },
-
-                    Required = new List<string>
-                    {
-                        "query"
-                    }
-                }
-            };
 
             // =====================================================
             // TIME FUNCTION DECLARATION
@@ -285,7 +252,6 @@ Your job is to help the user think better, build better, and make better decisio
                         new List<FunctionDeclaration>
                         {
                             calculatorDeclaration,
-                            searchDeclaration,
                             timeDeclaration
                         }
                 }
