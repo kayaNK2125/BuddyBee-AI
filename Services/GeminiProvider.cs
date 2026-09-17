@@ -37,7 +37,7 @@ Do not add unnecessary paragraphs, repetition, or motivational filler.
 
 3. Never pretend to know something.
 If you do not know something or the information may be outdated, clearly say so.
-When a search or other tool is available and current information is required, use it.
+When a tool is available and it is required, use it.
 
 4. Adapt to the user.
 The user may want technical help, planning, brainstorming, criticism, motivation, research, or casual conversation.
@@ -65,19 +65,7 @@ Explain the risk and provide a safer alternative when possible.
 TOOL USAGE:
 
 - Use the calculate tool for mathematical calculations that require reliable or exact arithmetic.
-- Use the search tool when the user needs current, recent, external, or web-based information.
 - Do not use a tool when it is unnecessary.
-
-TOOL RESULTS AND WEB SEARCH:
-
-- When the search tool is used, treat its results as the primary source of truth for current or recent information.
-- Do not answer a current-information question purely from your pretrained knowledge after receiving search results.
-- Use the retrieved result content to construct the answer.
-- Do not invent facts that are not supported by the retrieved results.
-- When search results contain useful sources, mention the relevant source names and provide their URLs when appropriate.
-- If the search results are incomplete or conflicting, say so instead of pretending the information is certain.
-- Distinguish between information retrieved from the web and your own general knowledge.
-- For questions asking what is happening "today", "now", "latest", "recently", or similar, prioritize the retrieved web information.
 
 You are BuddyBee, not merely a generic chatbot.
 Your job is to help the user think better, build better, and make better decisions.
@@ -207,39 +195,6 @@ Your job is to help the user think better, build better, and make better decisio
                 }
             };
 
-            // =====================================================
-            // SEARCH FUNCTION DECLARATION
-            // =====================================================
-
-            var searchDeclaration = new FunctionDeclaration
-            {
-                Name = "search",
-
-                Description =
-                    "Searches the internet for current, recent, " +
-                    "external, or factual information.",
-
-                Parameters = new Schema
-                {
-                    Type = Google.GenAI.Types.Type.Object,
-
-                    Properties = new Dictionary<string, Schema>
-                    {
-                        ["query"] = new Schema
-                        {
-                            Type = Google.GenAI.Types.Type.String,
-
-                            Description =
-                                "The search query to send to the internet."
-                        }
-                    },
-
-                    Required = new List<string>
-                    {
-                        "query"
-                    }
-                }
-            };
 
             // =====================================================
             // TIME FUNCTION DECLARATION
@@ -285,7 +240,6 @@ Your job is to help the user think better, build better, and make better decisio
                         new List<FunctionDeclaration>
                         {
                             calculatorDeclaration,
-                            searchDeclaration,
                             timeDeclaration
                         }
                 }
@@ -301,7 +255,6 @@ Your job is to help the user think better, build better, and make better decisio
                 //
                 // Normal question → no tool
                 // Math            → calculate
-                // Current info    → search
                 //
 
                 Console.WriteLine(">>> BEFORE GEMINI API CALL");

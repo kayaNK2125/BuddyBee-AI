@@ -15,22 +15,19 @@ namespace BuddyBee.Api.Controllers
     public class ChatController : ControllerBase
     {
         private readonly IAIService _aiService;
-        private readonly MongoDbService _mongoDbService;
+        private readonly IConversationStore _conversationStore;
         private readonly ToolRegistry _toolRegistry;
-        private readonly ISearchService _searchService;
         private readonly IMemoryService _memoryService; //memory service for saving and retrieving memories
 
         public ChatController(
     IAIService aiService,
-    MongoDbService mongoDbService,
+    IConversationStore conversationStore,
     ToolRegistry toolRegistry,
-    ISearchService searchService,
     IMemoryService memoryService) //memory service injected into the controller
         {
             _aiService = aiService;
-            _mongoDbService = mongoDbService;
+            _conversationStore = conversationStore;
             _toolRegistry = toolRegistry;
-            _searchService = searchService;
             _memoryService = memoryService; //memory service initialized
         }
 
@@ -104,32 +101,6 @@ namespace BuddyBee.Api.Controllers
             return Ok(result.ToString());
         }
 
-        [HttpGet("test-search")]
-        public async Task<IActionResult> TestSearch(
-    [FromQuery] string query)
-        {
-            var result = await _searchService.SearchAsync(query);
-
-            return Ok(result);
-        }
-
-        [HttpGet("test-search-tool")]
-        public async Task<IActionResult> TestSearchTool()
-        {
-            var tool = _toolRegistry.GetTool("search");
-
-            if (tool == null)
-            {
-                return NotFound("Search tool not found.");
-            }
-
-            return Ok(new
-            {
-                tool.Name,
-                tool.Description
-            });
-        }
-
         [HttpPost]
         public async Task<IActionResult> Post(ChatRequestDto request)
         {
@@ -142,11 +113,11 @@ namespace BuddyBee.Api.Controllers
                 Time = DateTime.UtcNow
             };
 
-            await _mongoDbService.SaveMessage(userMessage);
-            
-            var history = await _mongoDbService.GetConversationMessages(
+            await _conversationStore.SaveMessage(userMessage);
+
+            var history = await _conversationStore.GetConversationMessages(
             request.ConversationId
-             );
+            );
 
             var memories = await _memoryService.GetMemories( //this will Retrieve memories for the user
             request.UserId
@@ -171,7 +142,7 @@ namespace BuddyBee.Api.Controllers
                 Time = DateTime.UtcNow
             };
 
-            await _mongoDbService.SaveMessage(botMessage);
+            await _conversationStore.SaveMessage(botMessage);
 
 
             return Ok(new
