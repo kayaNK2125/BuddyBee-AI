@@ -1,11 +1,12 @@
 ﻿using BuddyBee.Api.Configuration;
+using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
 namespace BuddyBee.Api.Services
 {
-    public class MongoDbService
+    public class MongoDbService : IConversationStore
     {
         private readonly IMongoCollection<Message> _messages;
         private readonly IMongoDatabase _database;

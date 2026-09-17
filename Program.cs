@@ -10,10 +10,24 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDb"));
 
-builder.Services.Configure<FishAudioSettings>(
-    builder.Configuration.GetSection("FishAudio"));
 
-builder.Services.AddSingleton<MongoDbService>();
+builder.Services.AddSingleton<IConversationStore>(sp =>
+{
+    var settings = sp
+        .GetRequiredService<
+            Microsoft.Extensions.Options.IOptions<MongoDbSettings>>()
+        .Value;
+
+    if (!string.IsNullOrWhiteSpace(settings.ConnectionString) &&
+        !string.IsNullOrWhiteSpace(settings.DatabaseName))
+    {
+        return new MongoDbService(
+            sp.GetRequiredService<
+                Microsoft.Extensions.Options.IOptions<MongoDbSettings>>());
+    }
+
+    return new InMemoryConversationStore();
+});
 // Add services to the container.
 
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
@@ -48,18 +62,33 @@ builder.Services.AddScoped<ToolRegistry>();
 
 builder.Services.AddScoped<MathEngine>();
 builder.Services.AddScoped<MathExpressionParser>();
-
+    
 
 builder.Services.AddScoped<CalculatorTool>();
 
 builder.Services.AddScoped<GeminiProvider>();
 builder.Services.AddScoped<OpenAIProvider>();
 
-builder.Services.AddScoped<IMemoryService, MemoryService>();
+builder.Services.AddSingleton<IMemoryService>(sp =>
+{
+    var settings = sp
+        .GetRequiredService<
+            Microsoft.Extensions.Options.IOptions<MongoDbSettings>>()
+        .Value;
+
+    if (!string.IsNullOrWhiteSpace(settings.ConnectionString) &&
+        !string.IsNullOrWhiteSpace(settings.DatabaseName))
+    {
+        return new MemoryService(
+            sp.GetRequiredService<IMongoDatabase>());
+    }
+
+    return new InMemoryMemoryService();
+});
 
 builder.Services.AddScoped<IAIService, AIRouter>();
 
-builder.Services.AddHttpClient<IVoiceService, FishAudioVoiceService>();
+
 
 builder.Services.AddOpenApi();
 
