@@ -1,12 +1,7 @@
-﻿using System.Numerics;
 using BuddyBee.Api.DTOs;
 using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
-using BuddyBee.Api.Services;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using static Google.Apis.Requests.BatchRequest;
-
 
 namespace BuddyBee.Api.Controllers
 {
@@ -16,89 +11,16 @@ namespace BuddyBee.Api.Controllers
     {
         private readonly IAIService _aiService;
         private readonly IConversationStore _conversationStore;
-        private readonly ToolRegistry _toolRegistry;
-        private readonly IMemoryService _memoryService; //memory service for saving and retrieving memories
+        private readonly IMemoryService _memoryService; // memory service for saving and retrieving memories
 
         public ChatController(
-    IAIService aiService,
-    IConversationStore conversationStore,
-    ToolRegistry toolRegistry,
-    IMemoryService memoryService) //memory service injected into the controller
+            IAIService aiService,
+            IConversationStore conversationStore,
+            IMemoryService memoryService)
         {
             _aiService = aiService;
             _conversationStore = conversationStore;
-            _toolRegistry = toolRegistry;
-            _memoryService = memoryService; //memory service initialized
-        }
-
-        [HttpGet("test-tool")]
-        public async Task<IActionResult> TestTool()
-        {
-            var tool = _toolRegistry.GetTool("get_time");
-
-            if (tool == null)
-            {
-                return NotFound("Tool not found.");
-            }
-
-            var result = await tool.ExecuteAsync(
-                new Dictionary<string, object>());
-
-            return Ok(result);
-        }
-        [HttpGet("test-calculator-tool")]
-        public async Task<IActionResult> TestCalculator()
-        {
-
-            var tool = _toolRegistry.GetTool("calculate");
-
-            var arguments = new Dictionary<string, object>
-            {
-                ["operation"] = "multiply",
-                ["a"] = 12,
-                ["b"] = 8
-            };
-
-            var result = await tool.ExecuteAsync(arguments);
-
-            return Ok(result);
-        }
-
-        [HttpGet("test-big-number")]
-        public IActionResult TestBigNumber(
-    [FromServices] MathEngine mathEngine)
-        {
-            var a = BigInteger.Parse(
-                "999999999999999999999999999999999999999999999999999999");
-
-            var b = BigInteger.Parse(
-                "888888888888888888888888888888888888888888888888888888");
-
-            var result = mathEngine.Multiply(a, b);
-
-            return Ok(result.ToString());
-        }
-
-        [HttpGet("test-rational")]
-        public IActionResult TestRational()
-        {
-            var first = new BigRational(2, 3);
-            var second = new BigRational(5, 7);
-                
-            var result = first.Divide(second);
-
-            return Ok(result.ToString());
-        }
-
-        [HttpGet("test-expression")]
-        public IActionResult TestExpression(
-    [FromServices] MathExpressionParser parser)
-        {
-            var result = parser.Evaluate(
-                "1e-3 * 1e3"
-            );
-
-            return Ok(result.ToString());
+            _memoryService = memoryService;
         }
 
         [HttpPost]

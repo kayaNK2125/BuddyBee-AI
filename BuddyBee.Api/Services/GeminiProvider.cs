@@ -1,10 +1,9 @@
-﻿using BuddyBee.Api.Exceptions;
+using BuddyBee.Api.Exceptions;
 using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
 using BuddyBee.Api.Tools;
 using Google.GenAI;
 using Google.GenAI.Types;
-using static Google.Apis.Requests.BatchRequest;
 
 namespace BuddyBee.Api.Services
 {
@@ -528,76 +527,6 @@ Your job is to help the user think better, build better, and make better decisio
                     ex
                 );
             }
-        }
-
-        // Temporary streaming diagnostic test method
-        public async Task TestStreamingAsync()
-        {
-            Console.WriteLine("=== GEMINI STREAM TEST START ===");
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            bool firstChunkLogged = false;
-
-            var contents = new List<Content>
-            {
-                new Content
-                {
-                    Role = "user",
-                    Parts = new List<Part>
-                    {
-                        new Part
-                        {
-                            Text = "Explain artificial intelligence in four short paragraphs."
-                        }
-                    }
-                }
-            };
-
-            try
-            {
-                var stream = _client.Models.GenerateContentStreamAsync(
-                    model: "gemini-3.5-flash-lite",
-                    contents: contents,
-                    config: new GenerateContentConfig
-                    {
-                        SystemInstruction = new Content
-                        {
-                            Parts = new List<Part>
-                            {
-                                new Part
-                                {
-                                    Text = "You are a helpful assistant."
-                                }
-                            }
-                        }
-                    });
-
-                await foreach (var chunk in stream)
-                {
-                    var text = chunk.Text;
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        if (!firstChunkLogged)
-                        {
-                            firstChunkLogged = true;
-                            Console.WriteLine($"[STREAM CHUNK] First non-empty chunk at {sw.ElapsedMilliseconds}ms: {text}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"[STREAM CHUNK] {text}");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[STREAM ERROR] {ex.Message}");
-            }
-            finally
-            {
-                sw.Stop();
-            }
-
-            Console.WriteLine($"=== GEMINI STREAM TEST COMPLETE === Total: {sw.ElapsedMilliseconds}ms");
         }
     }
 }

@@ -1,10 +1,9 @@
-﻿// Which AI provider should use its job (trafic controler)
+// Which AI provider should use its job (trafic controler)
 
 using BuddyBee.Api.DTOs;
 using BuddyBee.Api.Exceptions;
 using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
-using BuddyBee.Api.Provider.Services;
 
 namespace BuddyBee.Api.Services
 {
@@ -55,7 +54,7 @@ namespace BuddyBee.Api.Services
         public async Task<AIResponseDto> GenerateReply(
     string message,
     List<Message> history,
-    string memoryContext) // memoryContext parameter is not used in this implementation
+    string memoryContext)
         {
             try
             {

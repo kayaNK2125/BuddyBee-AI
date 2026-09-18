@@ -1,11 +1,11 @@
-﻿#pragma warning disable OPENAI001
+#pragma warning disable OPENAI001
 
 using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
 using OpenAI.Responses;
 using BuddyBee.Api.Exceptions;
 
-namespace BuddyBee.Api.Provider.Services
+namespace BuddyBee.Api.Services
 {
     public class OpenAIProvider : IAIProvider
     {

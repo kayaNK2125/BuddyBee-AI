@@ -1,6 +1,5 @@
 using BuddyBee.Api.Configuration;
 using BuddyBee.Api.Interfaces;
-using BuddyBee.Api.Provider.Services;
 using BuddyBee.Api.Services;
 using BuddyBee.Api.Tools;
 using MongoDB.Driver;
@@ -63,8 +62,6 @@ builder.Services.AddScoped<ToolRegistry>();
 builder.Services.AddScoped<MathEngine>();
 builder.Services.AddScoped<MathExpressionParser>();
     
-
-builder.Services.AddScoped<CalculatorTool>();
 
 builder.Services.AddScoped<GeminiProvider>();
 builder.Services.AddScoped<OpenAIProvider>();
