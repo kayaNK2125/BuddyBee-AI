@@ -1,0 +1,211 @@
+.message-row {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  width: 100%;
+  animation: messageEntrance 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.row-user {
+  flex-direction: row-reverse;
+}
+
+.message-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.row-user .message-avatar {
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+}
+
+.row-bot .message-avatar {
+  background: var(--color-amber-subtle);
+  color: var(--color-amber-primary);
+  border: 1px solid var(--color-border-amber);
+}
+
+.message-bubble {
+  max-width: 82%;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  position: relative;
+  line-height: 1.6;
+}
+
+.bubble-user {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-primary);
+}
+
+.bubble-bot {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.row-user .message-header {
+  justify-content: flex-end;
+}
+
+.message-sender {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.message-provider-tag {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-amber-subtle);
+  color: var(--color-amber-spark);
+  border: 1px solid var(--color-border-amber);
+}
+
+.message-time {
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+}
+
+/* User Message Styling */
+.user-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Markdown Rendering Inside Bot Bubbles */
+.message-body {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  overflow-wrap: break-word;
+}
+
+.message-body p {
+  margin-bottom: 0.75em;
+}
+
+.message-body p:last-child {
+  margin-bottom: 0;
+}
+
+.message-body code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-3);
+  color: var(--color-amber-spark);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.message-body pre {
+  background: #08090C;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin: var(--space-3) 0;
+  overflow-x: auto;
+}
+
+.message-body pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.message-body ul, .message-body ol {
+  margin: var(--space-2) 0 var(--space-3) var(--space-5);
+}
+
+.message-body ul {
+  list-style: disc;
+}
+
+.message-body ol {
+  list-style: decimal;
+}
+
+.message-body li {
+  margin-bottom: 0.35em;
+}
+
+.message-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-4) 0;
+  font-size: 0.875rem;
+}
+
+.message-body th, .message-body td {
+  border: 1px solid var(--color-border-default);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+
+.message-body th {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+}
+
+.message-body a {
+  color: var(--color-amber-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.message-actions {
+  margin-top: var(--space-3);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
+  transition: var(--transition-fast);
+}
+
+.action-copy-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+}
+
+@keyframes messageEntrance {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .message-bubble {
+    max-width: 92%;
+    padding: var(--space-3) var(--space-4);
+  }
+}

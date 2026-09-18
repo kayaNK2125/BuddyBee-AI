@@ -1,0 +1,75 @@
+:root {
+  /* Surface & Canvas Tokens (Obsidian Theme) */
+  --color-canvas: #0B0C0E;
+  --color-surface-1: #12151B;
+  --color-surface-2: #191D26;
+  --color-surface-3: #222734;
+  --color-surface-translucent: rgba(18, 21, 27, 0.78);
+  --color-surface-elevated: rgba(25, 29, 38, 0.85);
+
+  /* Border & Divider Tokens */
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-default: #252A36;
+  --color-border-strong: #343B4C;
+  --color-border-amber: rgba(245, 158, 11, 0.35);
+
+  /* Brand / Solar Amber Photonic Energy */
+  --color-amber-primary: #F59E0B;
+  --color-amber-deep: #D97706;
+  --color-amber-glow: #FBBF24;
+  --color-amber-spark: #FDE68A;
+  --color-amber-subtle: rgba(245, 158, 11, 0.12);
+  --color-amber-muted: rgba(245, 158, 11, 0.05);
+
+  /* Typography Colors */
+  --color-text-primary: #F1F4F8;
+  --color-text-secondary: #9AA2B2;
+  --color-text-tertiary: #677082;
+  --color-text-inverse: #0B0C0E;
+
+  /* Status Colors */
+  --color-status-online: #10B981;
+  --color-status-degraded: #F59E0B;
+  --color-status-error: #EF4444;
+  --color-status-error-deep: #991B1B;
+
+  /* Typography Families */
+  --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing Scale */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+
+  /* Border Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+
+  /* Shadows & Elevation */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.65);
+  --shadow-amber-glow: 0 0 24px rgba(245, 158, 11, 0.18);
+  --shadow-amber-pulse: 0 0 36px rgba(245, 158, 11, 0.28);
+
+  /* Layout Constants */
+  --header-height: 56px;
+  --content-max-width: 780px;
+  --app-max-width: 1440px;
+
+  /* Motion & Transitions */
+  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}

@@ -1,0 +1,126 @@
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-height));
+  width: 100%;
+  position: relative;
+  z-index: 3;
+  overflow: hidden;
+}
+
+.chat-timeline {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.timeline-inner {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding-bottom: var(--space-4);
+}
+
+/* Error Banner */
+.error-banner {
+  max-width: var(--content-max-width);
+  margin: 0 auto var(--space-2);
+  width: calc(100% - var(--space-8));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(43, 14, 14, 0.9);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+  animation: bannerSlide 0.25s ease;
+  z-index: 6;
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.error-icon {
+  color: var(--color-status-error);
+  flex-shrink: 0;
+}
+
+.error-text {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8125rem;
+}
+
+.error-message {
+  font-weight: 600;
+  color: #FCA5A5;
+}
+
+.error-details {
+  font-size: 0.75rem;
+  color: #F87171;
+  font-family: var(--font-mono);
+}
+
+.error-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.error-retry-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #FEE2E2;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: var(--transition-fast);
+}
+
+.error-retry-btn:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.error-dismiss-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #F87171;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+}
+
+.error-dismiss-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #FEE2E2;
+}
+
+@keyframes bannerSlide {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

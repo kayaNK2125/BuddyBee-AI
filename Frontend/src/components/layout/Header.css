@@ -1,0 +1,144 @@
+.app-header {
+  height: var(--header-height);
+  width: 100%;
+  padding: 0 var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: rgba(11, 12, 14, 0.75);
+  backdrop-filter: blur(14px);
+  z-index: 10;
+  position: relative;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.brand-hexagon {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.brand-badge {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+  color: var(--color-amber-glow);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border-subtle);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  transition: var(--transition-fast);
+}
+
+.status-pill:hover {
+  border-color: var(--color-border-default);
+  background: var(--color-surface-2);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-tertiary);
+}
+
+.health-healthy .status-dot {
+  background: var(--color-status-online);
+  box-shadow: 0 0 8px var(--color-status-online);
+}
+
+.health-checking .status-dot {
+  background: var(--color-status-degraded);
+  animation: pulse 1s infinite;
+}
+
+.health-offline .status-dot {
+  background: var(--color-status-error);
+}
+
+.provider-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-amber-subtle);
+  border: 1px solid var(--color-border-amber);
+  color: var(--color-amber-spark);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+}
+
+.provider-icon {
+  color: var(--color-amber-primary);
+}
+
+.icon-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: var(--transition-fast);
+}
+
+.icon-action-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: 0 var(--space-4);
+  }
+  .brand-badge {
+    display: none;
+  }
+}

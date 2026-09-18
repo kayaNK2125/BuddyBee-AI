@@ -1,0 +1,55 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--color-canvas);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Soft atmospheric halo in the right quadrant, complementing the honeycomb atmosphere */
+.ambient-glow {
+  position: absolute;
+  top: 15%;
+  right: 10%;
+  width: 520px;
+  height: 520px;
+  opacity: 0.20;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.07) 0%, rgba(217, 119, 6, 0.02) 50%, transparent 70%);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  z-index: 1;
+}
+
+.glow-idle {
+  opacity: 0.18;
+  transform: scale(1);
+}
+
+.glow-typing {
+  opacity: 0.28;
+  transform: scale(1.06);
+}
+
+.glow-sending {
+  opacity: 0.38;
+  transform: scale(1.12);
+  background: radial-gradient(circle, rgba(253, 230, 138, 0.09) 0%, rgba(245, 158, 11, 0.03) 50%, transparent 70%);
+}
+
+.glow-thinking {
+  opacity: 0.32;
+  transform: scale(1.10);
+}
+
+.glow-responding {
+  opacity: 0.25;
+  transform: scale(1.04);
+}
+
+.glow-error {
+  opacity: 0.30;
+  transform: scale(1);
+  background: radial-gradient(circle, rgba(220, 38, 38, 0.12) 0%, rgba(153, 27, 27, 0.03) 50%, transparent 70%);
+}
