@@ -1,13 +1,14 @@
 .app-header {
   height: var(--header-height);
   width: 100%;
-  padding: 0 var(--space-6);
+  padding: 0 var(--space-5);
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--color-border-subtle);
-  background: rgba(11, 12, 14, 0.75);
-  backdrop-filter: blur(14px);
+  background: rgba(11, 12, 14, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   z-index: 10;
   position: relative;
 }
@@ -16,6 +17,29 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+
+.sidebar-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  border: 1px solid transparent;
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-subtle);
+}
+
+.sidebar-toggle-btn.active {
+  color: var(--color-amber-glow);
 }
 
 .brand-mark {
@@ -68,6 +92,7 @@
   font-family: var(--font-mono);
   color: var(--color-text-secondary);
   transition: var(--transition-fast);
+  cursor: pointer;
 }
 
 .status-pill:hover {
@@ -113,20 +138,27 @@
   color: var(--color-amber-primary);
 }
 
-.icon-action-btn {
+/* Prominent Header New Chat Button */
+.header-new-chat-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
   transition: var(--transition-fast);
+  cursor: pointer;
 }
 
-.icon-action-btn:hover {
-  background: var(--color-surface-2);
-  color: var(--color-text-primary);
+.header-new-chat-btn:hover {
+  background: var(--color-amber-subtle);
+  border-color: var(--color-border-amber);
+  color: var(--color-amber-spark);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
 }
 
 @keyframes pulse {
@@ -136,9 +168,48 @@
 
 @media (max-width: 640px) {
   .app-header {
-    padding: 0 var(--space-4);
+    padding: 0 var(--space-3);
   }
   .brand-badge {
     display: none;
+  }
+  .header-new-chat-btn .btn-text {
+    display: none;
+  }
+  .header-new-chat-btn {
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+  }
+}
+
+/* AI Provider Settings Button */
+.header-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+
+.header-settings-btn:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-border-default);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 640px) {
+  .header-settings-btn .btn-text {
+    display: none;
+  }
+  .header-settings-btn {
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
   }
 }

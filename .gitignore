@@ -36,3 +36,7 @@ logs/
 # Operating System Files
 .DS_Store
 Thumbs.db
+
+# Project-specific local/agent files
+SKILL.md
+

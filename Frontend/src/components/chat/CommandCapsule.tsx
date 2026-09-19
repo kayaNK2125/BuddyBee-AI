@@ -81,7 +81,7 @@ export const CommandCapsule: React.FC = () => {
           disabled={!inputText.trim() || isBusy}
           aria-label="Send message"
         >
-          {isBusy ? <Loader2 size={16} className="btn-spinner" /> : <ArrowUp size={16} />}
+          {isBusy ? <Loader2 size={16} className="btn-spinner" /> : <ArrowUp size={16} strokeWidth={2.2} />}
         </button>
       </div>
       <div className="capsule-footer-note">

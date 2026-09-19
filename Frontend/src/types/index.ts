@@ -24,4 +24,8 @@ export interface AppError {
   details?: string;
   status?: number;
   retryable?: boolean;
+  code?: string;
+  provider?: string;
 }
+
+export * from './session';

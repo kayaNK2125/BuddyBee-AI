@@ -2,11 +2,36 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - var(--header-height));
+  height: 100%;
   width: 100%;
+  min-width: 0;
   position: relative;
   z-index: 3;
   overflow: hidden;
+  transition: padding var(--transition-normal);
+}
+
+/* Error Banner — sits ABOVE the scrollable chat-timeline, never scrolls away */
+.error-banner {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0 var(--space-4) var(--space-2);
+  z-index: 7;
+  animation: bannerSlide 0.25s ease;
+}
+
+.error-banner-main {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(43, 14, 14, 0.92);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
 }
 
 .chat-timeline {
@@ -34,39 +59,24 @@
   padding-bottom: var(--space-4);
 }
 
-/* Error Banner */
-.error-banner {
-  max-width: var(--content-max-width);
-  margin: 0 auto var(--space-2);
-  width: calc(100% - var(--space-8));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  background: rgba(43, 14, 14, 0.9);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(12px);
-  animation: bannerSlide 0.25s ease;
-  z-index: 6;
-}
-
 .error-content {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
 }
 
 .error-icon {
   color: var(--color-status-error);
   flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .error-text {
   display: flex;
   flex-direction: column;
+  gap: 2px;
   font-size: 0.8125rem;
+  min-width: 0;
 }
 
 .error-message {
@@ -78,12 +88,60 @@
   font-size: 0.75rem;
   color: #F87171;
   font-family: var(--font-mono);
+  word-break: break-word;
+}
+
+/* Technical details collapsible area */
+.error-tech-details {
+  border-top: 1px solid rgba(239, 68, 68, 0.25);
+  padding-top: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.error-tech-pre {
+  font-family: var(--font-mono);
+  font-size: 0.69rem;
+  color: #FDA4A4;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-y: auto;
+  max-height: 120px;
+  margin: 0;
+  padding: 0;
+  opacity: 0.8;
 }
 
 .error-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.error-switch-managed-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #FDE68A;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.error-switch-managed-btn:hover {
+  background: rgba(245, 158, 11, 0.38);
+  border-color: rgba(245, 158, 11, 0.7);
+  color: #FEF3C7;
+}
+
+.error-switch-managed-btn:active {
+  transform: translateY(1px);
 }
 
 .error-retry-btn {
@@ -98,10 +156,32 @@
   font-size: 0.75rem;
   font-weight: 500;
   transition: var(--transition-fast);
+  cursor: pointer;
 }
 
 .error-retry-btn:hover {
   background: rgba(239, 68, 68, 0.35);
+}
+
+.error-details-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94A3B8;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 400;
+  transition: var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.error-details-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #CBD5E1;
 }
 
 .error-dismiss-btn {
@@ -113,6 +193,8 @@
   color: #F87171;
   border-radius: var(--radius-sm);
   transition: var(--transition-fast);
+  cursor: pointer;
+  margin-left: auto;
 }
 
 .error-dismiss-btn:hover {
@@ -120,7 +202,28 @@
   color: #FEE2E2;
 }
 
+.error-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #E2E8F0;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.error-settings-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+}
+
 @keyframes bannerSlide {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
 }

@@ -63,6 +63,46 @@ builder.Services.AddScoped<MathEngine>();
 builder.Services.AddScoped<MathExpressionParser>();
     
 
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<ProviderKeyContext>(sp =>
+{
+    var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext;
+    var keyContext = new ProviderKeyContext();
+
+    if (httpContext != null)
+    {
+        // Support dynamic provider headers: X-Provider-Key-<ProviderName>
+        foreach (var header in httpContext.Request.Headers)
+        {
+            if (header.Key.StartsWith("X-Provider-Key-", StringComparison.OrdinalIgnoreCase))
+            {
+                var providerName = header.Key["X-Provider-Key-".Length..];
+                var val = header.Value.ToString()?.Trim();
+                if (!string.IsNullOrEmpty(val))
+                {
+                    keyContext.UserKeys[providerName] = val;
+                }
+            }
+        }
+
+        // Direct provider headers
+        var gemini = httpContext.Request.Headers["X-Gemini-Api-Key"].ToString()?.Trim();
+        if (!string.IsNullOrEmpty(gemini))
+        {
+            keyContext.UserKeys["Gemini"] = gemini;
+        }
+
+        var openAi = httpContext.Request.Headers["X-OpenAI-Api-Key"].ToString()?.Trim();
+        if (!string.IsNullOrEmpty(openAi))
+        {
+            keyContext.UserKeys["OpenAI"] = openAi;
+        }
+    }
+
+    return keyContext;
+});
+
 builder.Services.AddScoped<GeminiProvider>();
 builder.Services.AddScoped<OpenAIProvider>();
 

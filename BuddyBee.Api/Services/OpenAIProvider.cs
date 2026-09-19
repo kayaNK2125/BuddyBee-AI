@@ -9,7 +9,9 @@ namespace BuddyBee.Api.Services
 {
     public class OpenAIProvider : IAIProvider
     {
-        private readonly ResponsesClient _client;
+        private ResponsesClient? _client;
+        private readonly IConfiguration _configuration;
+        private readonly ProviderKeyContext _keyContext;
 
         private const string BuddyBeeInstructions = """
         You are BuddyBee, an AI assistant created by the developer of this application.
@@ -56,16 +58,44 @@ namespace BuddyBee.Api.Services
         Your job is to help the user think better, build better, and make better decisions.
         """;
 
-        public OpenAIProvider(IConfiguration configuration)
+        public OpenAIProvider(
+            IConfiguration configuration,
+            ProviderKeyContext keyContext)
         {
-            var apiKey = configuration["OPENAI_API_KEY"];
+            _configuration = configuration;
+            _keyContext = keyContext;
+        }
 
-            if (string.IsNullOrEmpty(apiKey))
+        private ResponsesClient GetClient()
+        {
+            if (_client != null)
             {
-                throw new Exception("OpenAI API key is missing.");
+                return _client;
             }
 
-            _client = new ResponsesClient(apiKey: apiKey);
+            var userKey = _keyContext.GetUserKey("OpenAI");
+            if (!string.IsNullOrWhiteSpace(userKey))
+            {
+                _client = new ResponsesClient(apiKey: userKey);
+                return _client;
+            }
+
+            // Invariant: If request contains any user-supplied provider key,
+            // developer/server keys must NEVER be used as a substitute for a missing user provider key.
+            if (_keyContext.HasUserKeys)
+            {
+                throw new AIProviderException("OpenAI", "No user OpenAI API key was provided.", new InvalidOperationException("USER_KEY_MISSING"));
+            }
+
+            // Developer / Managed fallback
+            var serverKey = _configuration["OPENAI_API_KEY"];
+            if (string.IsNullOrWhiteSpace(serverKey))
+            {
+                throw new AIProviderException("OpenAI", "OpenAI provider key is not configured on the server.", new InvalidOperationException("SERVER_KEY_MISSING"));
+            }
+
+            _client = new ResponsesClient(apiKey: serverKey);
+            return _client;
         }
 
         public async Task<string> GenerateReply( // This method generates a reply from the OpenAI model based on the user's message, conversation history, and memory context.
@@ -111,9 +141,14 @@ namespace BuddyBee.Api.Services
 
             try
             {
-                var response = await _client.CreateResponseAsync(options);
+                var client = GetClient();
+                var response = await client.CreateResponseAsync(options);
 
                 return response.Value.GetOutputText();
+            }
+            catch (AIProviderException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

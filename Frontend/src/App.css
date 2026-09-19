@@ -8,6 +8,17 @@
   overflow: hidden;
 }
 
+/* App Body holding Sidebar and Central Chat Workspace */
+.app-body {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: calc(100vh - var(--header-height));
+  position: relative;
+  z-index: 3;
+  overflow: hidden;
+}
+
 /* Soft atmospheric halo in the right quadrant, complementing the honeycomb atmosphere */
 .ambient-glow {
   position: absolute;

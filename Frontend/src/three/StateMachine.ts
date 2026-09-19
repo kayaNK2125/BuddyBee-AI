@@ -4,56 +4,56 @@ import type { ChrysalisTransformTarget } from './types';
 const STATE_CONFIGS: Record<ChrysalisState, ChrysalisTransformTarget> = {
   idle: {
     waveSpeed: 0.75,           // Tranquil, meditative 8s breathing wave
-    glowIntensity: 1.0,        // Soft, ambient baseline luminescence
-    particleSpeed: 0.75,       // Slow drifting firefly embers
+    glowIntensity: 1.0,        // Soft ambient baseline luminescence
+    particleSpeed: 0.70,       // Calm, ambient drifting
     parallaxSensitivity: 1.0,  // Smooth depth parallax
     accentColor: 0xF59E0B,     // Classic Solar Amber
     secondaryColor: 0xFDE68A,
   },
   interacting: {
-    waveSpeed: 1.15,
-    glowIntensity: 1.15,
-    particleSpeed: 1.0,
-    parallaxSensitivity: 1.2,
+    waveSpeed: 0.95,
+    glowIntensity: 1.10,
+    particleSpeed: 0.75,       // Calm transition
+    parallaxSensitivity: 1.1,
     accentColor: 0xF59E0B,
     secondaryColor: 0xFDE68A,
   },
   typing: {
-    waveSpeed: 1.50,           // Kinetic ripple across honeycomb cells
-    glowIntensity: 1.25,       // Cells awaken with energetic pulse
-    particleSpeed: 1.25,
-    parallaxSensitivity: 1.1,
+    waveSpeed: 1.15,           // Gentle kinetic ripple
+    glowIntensity: 1.18,       // Subtle awakening
+    particleSpeed: 0.78,       // Steady, calm drift (no speed surge)
+    parallaxSensitivity: 1.05,
     accentColor: 0xFBBF24,
     secondaryColor: 0xFDE68A,
   },
   sending: {
-    waveSpeed: 2.20,           // Harmonic energy sweep through the lattice
-    glowIntensity: 1.50,       // Radiant pulse across the network
-    particleSpeed: 1.60,
-    parallaxSensitivity: 0.8,
+    waveSpeed: 1.40,           // Measured inward pulse
+    glowIntensity: 1.30,
+    particleSpeed: 0.85,       // Slight focus without sudden rush
+    parallaxSensitivity: 0.85,
     accentColor: 0xFDE68A,
     secondaryColor: 0xF59E0B,
   },
   thinking: {
-    waveSpeed: 1.80,           // Coordinated rhythmic pulse through the hive mind
-    glowIntensity: 1.40,       // Warm golden illumination
-    particleSpeed: 1.35,
-    parallaxSensitivity: 1.0,
+    waveSpeed: 1.30,           // Calm rhythmic pulse
+    glowIntensity: 1.25,
+    particleSpeed: 0.80,       // Calm drift during synthesis
+    parallaxSensitivity: 0.95,
     accentColor: 0xFBBF24,
     secondaryColor: 0xFDE68A,
   },
   responding: {
-    waveSpeed: 1.10,           // Steady golden honey flow
-    glowIntensity: 1.20,       // Gentle continuous luminescence
-    particleSpeed: 1.0,
+    waveSpeed: 0.95,           // Steady golden honey flow
+    glowIntensity: 1.15,
+    particleSpeed: 0.75,       // Return smoothly to baseline
     parallaxSensitivity: 1.0,
     accentColor: 0xF59E0B,
     secondaryColor: 0xFDE68A,
   },
   error: {
-    waveSpeed: 0.45,           // Subdued, dim smoldering pulse
-    glowIntensity: 0.75,       // Lower visibility
-    particleSpeed: 0.40,
+    waveSpeed: 0.45,           // Subdued smoldering pulse
+    glowIntensity: 0.75,
+    particleSpeed: 0.40,       // Slow subdued embers
     parallaxSensitivity: 0.5,
     accentColor: 0xDC2626,     // Alert amber-crimson
     secondaryColor: 0x991B1B,
@@ -77,7 +77,7 @@ export class ChrysalisStateMachine {
   }
 
   public update(delta: number): void {
-    const lerpRate = 3.2 * delta;
+    const lerpRate = 3.0 * delta;
 
     this.current.waveSpeed += (this.target.waveSpeed - this.current.waveSpeed) * Math.min(lerpRate, 1);
     this.current.glowIntensity += (this.target.glowIntensity - this.current.glowIntensity) * Math.min(lerpRate, 1);

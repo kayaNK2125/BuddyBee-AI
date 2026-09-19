@@ -34,42 +34,43 @@ export class ChrysalisMesh {
     };
 
     // Layer 1: Distant Background Hive (Deep amber, smaller scale)
+    // 15-20% fewer cells near edge; subtle depth
     this.generateLayer({
       radius: 0.42,
       depthZ: -2.2,
       xRange: [-6.5, 6.5],
       yRange: [-4.0, 4.0],
-      baseOpacityMax: 0.14,
+      baseOpacityMax: 0.11,
       baseOpacityMin: 0.015,
       layerIndex: 0,
       geo: createHexGeo(0.42),
-      skipProbability: 0.35,
+      baseSkipProbability: 0.46,
     });
 
-    // Layer 2: Midground Main Honeycomb (Prominent on right, clean fade-off on left)
+    // Layer 2: Midground Main Honeycomb (Atmospheric right side, faint bottom-left echo)
     this.generateLayer({
       radius: 0.65,
       depthZ: 0.0,
       xRange: [-6.0, 6.5],
       yRange: [-3.8, 3.8],
-      baseOpacityMax: 0.35,
-      baseOpacityMin: 0.02,
+      baseOpacityMax: 0.27,
+      baseOpacityMin: 0.015,
       layerIndex: 1,
       geo: createHexGeo(0.65),
-      skipProbability: 0.28,
+      baseSkipProbability: 0.42,
     });
 
-    // Layer 3: Foreground Accent Cells (Floating large hexagonal halos in right negative space)
+    // Layer 3: Foreground Accent Cells (Floating large hexagonal halos, sparse)
     this.generateLayer({
       radius: 0.90,
       depthZ: 1.6,
-      xRange: [0.8, 6.0],
-      yRange: [-3.0, 3.0],
-      baseOpacityMax: 0.22,
-      baseOpacityMin: 0.05,
+      xRange: [1.2, 5.8],
+      yRange: [-2.8, 2.8],
+      baseOpacityMax: 0.18,
+      baseOpacityMin: 0.04,
       layerIndex: 2,
       geo: createHexGeo(0.90),
-      skipProbability: 0.55,
+      baseSkipProbability: 0.68,
     });
   }
 
@@ -82,9 +83,9 @@ export class ChrysalisMesh {
     baseOpacityMin: number;
     layerIndex: number;
     geo: THREE.BufferGeometry;
-    skipProbability: number;
+    baseSkipProbability: number;
   }): void {
-    const { radius, depthZ, xRange, yRange, baseOpacityMax, baseOpacityMin, layerIndex, geo, skipProbability } = config;
+    const { radius, depthZ, xRange, yRange, baseOpacityMax, baseOpacityMin, layerIndex, geo, baseSkipProbability } = config;
 
     const dx = Math.sqrt(3) * radius;
     const dy = 1.5 * radius;
@@ -103,16 +104,39 @@ export class ChrysalisMesh {
 
         if (x < xRange[0] || x > xRange[1] || y < yRange[0] || y > yRange[1]) continue;
 
-        if (Math.random() < skipProbability) continue;
+        // Bottom-left subtle presence zone
+        const isBottomLeft = (x >= -5.8 && x <= -1.8 && y >= -3.8 && y <= -0.8);
 
-        // Smooth non-linear horizontal gradient:
-        // Left (x < 0): very faint, ethereal atmosphere behind text
-        // Right (x > 0): glowing radiant hive in the atmospheric negative space
-        const normX = Math.min(Math.max((x + 5.0) / 10.0, 0), 1);
-        const horizontalWeight = Math.pow(normX, 2.2);
-        const baseOpacity = THREE.MathUtils.lerp(baseOpacityMin, baseOpacityMax, horizontalWeight);
+        // Right side: reduce density near the edge by 15-20% so it stays atmospheric rather than grid-like
+        let skipChance = baseSkipProbability;
+        if (x > 2.8) {
+          skipChance += 0.18;
+        }
 
-        if (baseOpacity < 0.015) continue;
+        if (isBottomLeft) {
+          // Slightly higher preservation for bottom-left echo cells
+          skipChance = 0.40;
+        }
+
+        if (Math.random() < Math.min(skipChance, 0.88)) continue;
+
+        let baseOpacity = 0;
+
+        if (isBottomLeft) {
+          // Whisper-thin lines in the bottom-left area (0.04 - 0.075)
+          const blWeight = Math.max(0, 1 - Math.hypot((x + 3.8) / 2.5, (y + 2.3) / 1.8));
+          baseOpacity = 0.038 + (blWeight * 0.035);
+        } else {
+          // Completely clear reading column (-1.8 <= x < 0.6)
+          if (x < 0.6) continue;
+
+          // Faster, softer fade-out gradient toward the right
+          const normX = Math.min(Math.max((x - 0.6) / 5.2, 0), 1);
+          const horizontalWeight = Math.pow(normX, 1.7);
+          baseOpacity = THREE.MathUtils.lerp(baseOpacityMin, baseOpacityMax, horizontalWeight);
+        }
+
+        if (baseOpacity < 0.02) continue;
 
         const material = new THREE.LineBasicMaterial({
           color: 0xF59E0B,
@@ -150,12 +174,12 @@ export class ChrysalisMesh {
       const wavePhase = time * waveSpeed + (cell.baseX * 0.40) - (cell.baseY * 0.30) + cell.phase * 0.2;
       const wave = Math.sin(wavePhase);
 
-      const scale = 1.0 + (wave * 0.018);
+      const scale = 1.0 + (wave * 0.016);
       cell.mesh.scale.set(scale, scale, 1);
 
-      const waveMultiplier = 0.85 + (0.25 * wave);
+      const waveMultiplier = 0.88 + (0.22 * wave);
       const targetOpacity = cell.baseOpacity * glowIntensity * waveMultiplier;
-      cell.material.opacity = Math.max(0.01, Math.min(0.95, targetOpacity));
+      cell.material.opacity = Math.max(0.01, Math.min(0.88, targetOpacity));
     }
   }
 

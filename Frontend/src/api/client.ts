@@ -1,6 +1,7 @@
 import { ENDPOINTS } from './endpoints';
 import type { ChatRequestDto, ChatResponseDto, PingResponseDto } from './types';
 import type { AppError } from '../types';
+import { getActiveUserKeys, getProviderMode } from '../utils/keyStorage';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5168').replace(/\/+$/, '');
 
@@ -19,6 +20,34 @@ class ApiClient {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+    // Attach active session-scoped user provider keys if configured
+    const mode = getProviderMode();
+    const userKeys = getActiveUserKeys();
+
+    // If Custom mode is selected for chat, require at least one configured key
+    if (mode === 'custom' && endpoint === ENDPOINTS.chat) {
+      if (!userKeys.gemini && !userKeys.openai) {
+        clearTimeout(timeoutId);
+        const keyRequiredError: AppError = {
+          message: 'Your API key is required',
+          details: 'You selected Use your own API key, but no provider key has been configured.',
+          status: 400,
+          code: 'API_KEY_REQUIRED',
+          retryable: false,
+        };
+        throw keyRequiredError;
+      }
+    }
+
+    const authHeaders: Record<string, string> = {};
+
+    if (userKeys.gemini) {
+      authHeaders['X-Gemini-Api-Key'] = userKeys.gemini;
+    }
+    if (userKeys.openai) {
+      authHeaders['X-OpenAI-Api-Key'] = userKeys.openai;
+    }
+
     try {
       const response = await fetch(`${this.base}${endpoint}`, {
         ...options,
@@ -26,6 +55,7 @@ class ApiClient {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          ...authHeaders,
           ...(options.headers || {}),
         },
       });
@@ -34,17 +64,25 @@ class ApiClient {
 
       if (!response.ok) {
         let errorText = '';
+        let errorJson: { error?: string; message?: string; details?: string; provider?: string } | null = null;
         try {
           errorText = await response.text();
+          try {
+            errorJson = JSON.parse(errorText);
+          } catch {
+            // Not JSON
+          }
         } catch {
           errorText = response.statusText;
         }
 
         const appError: AppError = {
-          message: `API error (${response.status}): ${response.statusText}`,
-          details: errorText,
+          message: errorJson?.message || `API error (${response.status}): ${response.statusText}`,
+          details: errorJson?.details || errorText,
           status: response.status,
           retryable: response.status >= 500 || response.status === 429,
+          code: errorJson?.error,
+          provider: errorJson?.provider,
         };
         throw appError;
       }

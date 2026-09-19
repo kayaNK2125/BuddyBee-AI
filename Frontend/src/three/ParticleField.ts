@@ -24,33 +24,43 @@ export class ParticleField {
   private positions: Float32Array;
   private colors: Float32Array;
 
-  constructor(count = 85) {
+  constructor(count = 68) {
     this.geometry = new THREE.BufferGeometry();
     this.positions = new Float32Array(count * 3);
     this.colors = new Float32Array(count * 3);
 
     for (let i = 0; i < count; i++) {
-      // Wide distribution across the viewport volume
-      // Slightly denser in the right quadrant (negative space)
-      const isRightBiased = Math.random() > 0.35;
-      const x = isRightBiased 
-        ? (Math.random() * 6.5 - 0.5) 
-        : (Math.random() * 8.0 - 7.0);
-      const y = (Math.random() * 8.5 - 4.25);
-      const z = (Math.random() * 5.0 - 2.5);
+      let x: number;
+      let y: number;
+      let z: number;
+
+      if (i < 4) {
+        // Dedicated 3-4 fireflies drifting in bottom-left area
+        x = -5.4 + Math.random() * 3.2; // [-5.4, -2.2]
+        y = -3.4 + Math.random() * 2.2; // [-3.4, -1.2]
+        z = -1.2 + Math.random() * 2.4;
+      } else {
+        // Atmospheric distribution across the space, biased to right negative space
+        const isRightBiased = Math.random() > 0.28;
+        x = isRightBiased 
+          ? (0.8 + Math.random() * 5.6) 
+          : (-6.5 + Math.random() * 4.0);
+        y = (Math.random() * 8.2 - 4.1);
+        z = (Math.random() * 4.8 - 2.4);
+      }
 
       this.fireflies.push({
         baseX: x,
         baseY: y,
         baseZ: z,
-        freqX: 0.30 + Math.random() * 0.40,
-        freqY: 0.35 + Math.random() * 0.45,
-        freqZ: 0.25 + Math.random() * 0.35,
-        ampX: 0.40 + Math.random() * 0.50,
-        ampY: 0.35 + Math.random() * 0.45,
-        ampZ: 0.30 + Math.random() * 0.40,
+        freqX: 0.22 + Math.random() * 0.28,
+        freqY: 0.26 + Math.random() * 0.32,
+        freqZ: 0.18 + Math.random() * 0.24,
+        ampX: 0.32 + Math.random() * 0.38,
+        ampY: 0.28 + Math.random() * 0.35,
+        ampZ: 0.22 + Math.random() * 0.28,
         phase: Math.random() * Math.PI * 2,
-        blinkFreq: 0.7 + Math.random() * 1.5,
+        blinkFreq: 0.6 + Math.random() * 1.1,
         baseSize: 0.06 + Math.random() * 0.04,
       });
 
@@ -66,11 +76,10 @@ export class ParticleField {
     this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
     this.geometry.setAttribute('color', new THREE.BufferAttribute(this.colors, 3));
 
-    // Create a soft glowing circular firefly sprite texture
     this.texture = this.createFireflyTexture();
 
     this.material = new THREE.PointsMaterial({
-      size: 0.16,
+      size: 0.15,
       map: this.texture,
       vertexColors: true,
       transparent: true,
@@ -91,8 +100,8 @@ export class ParticleField {
     const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
     grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
     grad.addColorStop(0.2, 'rgba(253, 230, 138, 0.9)');
-    grad.addColorStop(0.5, 'rgba(245, 158, 11, 0.4)');
-    grad.addColorStop(0.8, 'rgba(217, 119, 6, 0.15)');
+    grad.addColorStop(0.5, 'rgba(245, 158, 11, 0.38)');
+    grad.addColorStop(0.8, 'rgba(217, 119, 6, 0.12)');
     grad.addColorStop(1.0, 'rgba(217, 119, 6, 0)');
 
     ctx.fillStyle = grad;
@@ -123,7 +132,7 @@ export class ParticleField {
       pos[idx + 1] = f.baseY + Math.cos(t * f.freqY + f.phase * 1.3) * f.ampY;
       pos[idx + 2] = f.baseZ + Math.sin(t * f.freqZ + f.phase * 0.7) * f.ampZ;
 
-      // Soft natural blinking
+      // Soft natural pulsing
       const pulse = Math.pow(Math.sin(time * f.blinkFreq + f.phase), 4);
       const intensity = 0.20 + 0.80 * pulse;
 

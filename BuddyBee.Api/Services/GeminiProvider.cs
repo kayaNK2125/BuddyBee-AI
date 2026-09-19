@@ -9,8 +9,10 @@ namespace BuddyBee.Api.Services
 {
     public class GeminiProvider : IAIProvider
     {
-        private readonly Client _client;
+        private Client? _client;
+        private readonly IConfiguration _configuration;
         private readonly ToolRegistry _toolRegistry;
+        private readonly ProviderKeyContext _keyContext;
 
         private const string BuddyBeeInstructions = """
 You are BuddyBee, an AI assistant created by the developer of this application.
@@ -72,17 +74,44 @@ Your job is to help the user think better, build better, and make better decisio
 
         public GeminiProvider(
             IConfiguration configuration,
-            ToolRegistry toolRegistry)
+            ToolRegistry toolRegistry,
+            ProviderKeyContext keyContext)
         {
-            var apiKey = configuration["GEMINI_API_KEY"];
+            _configuration = configuration;
+            _toolRegistry = toolRegistry;
+            _keyContext = keyContext;
+        }
 
-            if (string.IsNullOrEmpty(apiKey))
+        private Client GetClient()
+        {
+            if (_client != null)
             {
-                throw new Exception("Gemini API key is missing.");
+                return _client;
             }
 
-            _client = new Client(apiKey: apiKey);
-            _toolRegistry = toolRegistry;
+            var userKey = _keyContext.GetUserKey("Gemini");
+            if (!string.IsNullOrWhiteSpace(userKey))
+            {
+                _client = new Client(apiKey: userKey);
+                return _client;
+            }
+
+            // Invariant: If request contains any user-supplied provider key,
+            // developer/server keys must NEVER be used as a substitute for a missing user provider key.
+            if (_keyContext.HasUserKeys)
+            {
+                throw new AIProviderException("Gemini", "No user Gemini API key was provided.", new InvalidOperationException("USER_KEY_MISSING"));
+            }
+
+            // Developer / Managed fallback
+            var serverKey = _configuration["GEMINI_API_KEY"];
+            if (string.IsNullOrWhiteSpace(serverKey))
+            {
+                throw new AIProviderException("Gemini", "Gemini provider key is not configured on the server.", new InvalidOperationException("SERVER_KEY_MISSING"));
+            }
+
+            _client = new Client(apiKey: serverKey);
+            return _client;
         }
 
         public async Task<string> GenerateReply( // Implement the IAIProvider interface
@@ -246,6 +275,7 @@ Your job is to help the user think better, build better, and make better decisio
 
             try
             {
+                GetClient();
                 // =================================================
                 // FIRST GEMINI REQUEST
                 // =================================================
@@ -518,6 +548,10 @@ Your job is to help the user think better, build better, and make better decisio
 
                 return "Tool execution limit reached.";
 
+            }
+            catch (AIProviderException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
