@@ -1,4 +1,4 @@
-.app-header {
+﻿.app-header {
   height: var(--header-height);
   width: 100%;
   padding: 0 var(--space-5);
@@ -17,6 +17,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .sidebar-toggle-btn {
@@ -30,6 +31,7 @@
   border: 1px solid transparent;
   transition: var(--transition-fast);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .sidebar-toggle-btn:hover {
@@ -46,12 +48,14 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
 }
 
 .brand-hexagon {
   width: 24px;
   height: 24px;
   filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
+  flex-shrink: 0;
 }
 
 .brand-name {
@@ -78,6 +82,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  flex-shrink: 0;
 }
 
 .status-pill {
@@ -93,6 +98,7 @@
   color: var(--color-text-secondary);
   transition: var(--transition-fast);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .status-pill:hover {
@@ -132,6 +138,7 @@
   color: var(--color-amber-spark);
   font-size: var(--text-xs);
   font-family: var(--font-mono);
+  white-space: nowrap;
 }
 
 .provider-icon {
@@ -152,6 +159,7 @@
   font-weight: 500;
   transition: var(--transition-fast);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .header-new-chat-btn:hover {
@@ -159,27 +167,6 @@
   border-color: var(--color-border-amber);
   color: var(--color-amber-spark);
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-@media (max-width: 640px) {
-  .app-header {
-    padding: 0 var(--space-3);
-  }
-  .brand-badge {
-    display: none;
-  }
-  .header-new-chat-btn .btn-text {
-    display: none;
-  }
-  .header-new-chat-btn {
-    padding: 6px 8px;
-    border-radius: var(--radius-sm);
-  }
 }
 
 /* AI Provider Settings Button */
@@ -196,6 +183,7 @@
   font-weight: 500;
   transition: var(--transition-fast);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .header-settings-btn:hover {
@@ -204,12 +192,67 @@
   color: var(--color-text-primary);
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Mobile & Tablet Compact Layout */
 @media (max-width: 640px) {
-  .header-settings-btn .btn-text {
+  .app-header {
+    padding: 0 8px;
+  }
+
+  .header-left {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .brand-mark {
+    gap: 0;
+  }
+
+  .brand-name {
     display: none;
   }
-  .header-settings-btn {
-    padding: 6px 8px;
+
+  .brand-badge {
+    display: none;
+  }
+
+  .sidebar-toggle-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .header-right {
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
+  .status-pill {
+    padding: 4px 7px;
+    gap: 4px;
+    font-size: 0.72rem;
+  }
+
+  .provider-pill {
+    padding: 4px 7px;
+    gap: 4px;
+    font-size: 0.72rem;
+  }
+
+  .header-settings-btn .btn-text,
+  .header-new-chat-btn .btn-text {
+    display: none;
+  }
+
+  .header-settings-btn,
+  .header-new-chat-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
     border-radius: var(--radius-sm);
   }
 }
