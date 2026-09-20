@@ -1,4 +1,4 @@
-.command-capsule-container {
+﻿.command-capsule-container {
   width: 100%;
   max-width: var(--content-max-width);
   margin: 0 auto;
@@ -111,4 +111,16 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* Mobile Viewport Responsiveness */
+@media (max-width: 768px) {
+  .command-capsule-container {
+    flex-shrink: 0;
+    padding: var(--space-2) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom, 12px));
+  }
+
+  .capsule-footer-note {
+    display: none;
+  }
 }

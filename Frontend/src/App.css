@@ -1,4 +1,4 @@
-.app-shell {
+﻿.app-shell {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -63,4 +63,17 @@
   opacity: 0.30;
   transform: scale(1);
   background: radial-gradient(circle, rgba(220, 38, 38, 0.12) 0%, rgba(153, 27, 27, 0.03) 50%, transparent 70%);
+}
+
+/* Responsive Dynamic Viewport and Mobile Layout Optimization */
+@media (max-width: 768px) {
+  .app-shell {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .app-body {
+    height: calc(100vh - var(--header-height));
+    height: calc(100dvh - var(--header-height));
+  }
 }
