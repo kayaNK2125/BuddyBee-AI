@@ -77,3 +77,19 @@
     height: calc(100dvh - var(--header-height));
   }
 }
+
+/* Version Indicator */
+.version-label {
+  position: fixed;
+  bottom: max(6px, env(safe-area-inset-bottom, 6px));
+  right: max(10px, env(safe-area-inset-right, 10px));
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+  z-index: 10;
+}

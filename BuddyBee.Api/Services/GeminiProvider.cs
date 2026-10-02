@@ -286,8 +286,6 @@ Your job is to help the user think better, build better, and make better decisio
                 // Math            → calculate
                 //
 
-                Console.WriteLine(">>> BEFORE GEMINI API CALL");
-
              var response =
     await _client.Models.GenerateContentAsync(
         model: "gemini-3.5-flash-lite",
@@ -319,8 +317,6 @@ Your job is to help the user think better, build better, and make better decisio
                     }
             }
         });
-
-                Console.WriteLine(">>> AFTER GEMINI API CALL");
 
                 // =================================================
                 // TOOL LOOP
@@ -357,9 +353,6 @@ Your job is to help the user think better, build better, and make better decisio
                             ?? "Gemini returned no response.";
                     }
 
-                    Console.WriteLine(
-                        $"Gemini requested {functionCalls.Count} tool call(s).");
-
                     // -------------------------------------------------
                     // Add Gemini's function-call message.
                     // -------------------------------------------------
@@ -381,9 +374,6 @@ Your job is to help the user think better, build better, and make better decisio
 
                     foreach (var functionCall in functionCalls)
                     {
-                        Console.WriteLine(
-                            $"Gemini requested tool: {functionCall.Name}");
-
                         // ---------------------------------------------
                         // Find the tool in ToolRegistry.
                         // ---------------------------------------------
@@ -399,9 +389,6 @@ Your job is to help the user think better, build better, and make better decisio
 
                         if (tool == null)
                         {
-                            Console.WriteLine(
-                                $"Tool not found: {functionCall.Name}");
-
                             var errorResponse =
                                 new FunctionResponse
                                 {
@@ -450,9 +437,6 @@ Your job is to help the user think better, build better, and make better decisio
                         var toolResult =
                             await tool.ExecuteAsync(arguments);
 
-                        Console.WriteLine(
-                            $"Tool result: {toolResult.Output}");
-
                         // ---------------------------------------------
                         // Build FunctionResponse.
                         // ---------------------------------------------
@@ -499,9 +483,6 @@ Your job is to help the user think better, build better, and make better decisio
 
                         Parts = functionResponseParts
                     });
-
-                    Console.WriteLine(
-                        ">>> SENDING FUNCTION RESPONSES BACK TO GEMINI");
 
                     // =================================================
                     // SECOND / NEXT GEMINI REQUEST

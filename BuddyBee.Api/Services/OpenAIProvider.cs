@@ -1,9 +1,10 @@
 #pragma warning disable OPENAI001
 
+using System.Text.Json;
+using BuddyBee.Api.Exceptions;
 using BuddyBee.Api.Interfaces;
 using BuddyBee.Api.Models;
 using OpenAI.Responses;
-using BuddyBee.Api.Exceptions;
 
 namespace BuddyBee.Api.Services
 {
@@ -12,6 +13,47 @@ namespace BuddyBee.Api.Services
         private ResponsesClient? _client;
         private readonly IConfiguration _configuration;
         private readonly ProviderKeyContext _keyContext;
+        private readonly ToolRegistry _toolRegistry;
+
+        private static readonly FunctionTool CalculatorToolDefinition =
+            ResponseTool.CreateFunctionTool(
+                functionName: "calculate",
+                functionDescription: "Evaluates mathematical expressions exactly, including large numbers, fractions, decimals, percentages, powers, and scientific notation.",
+                functionParameters: BinaryData.FromString("""
+                {
+                    "type": "object",
+                    "properties": {
+                        "expression": {
+                            "type": "string",
+                            "description": "The complete mathematical expression to calculate."
+                        }
+                    },
+                    "required": ["expression"],
+                    "additionalProperties": false
+                }
+                """),
+                strictModeEnabled: true
+            );
+
+        private static readonly FunctionTool TimeToolDefinition =
+            ResponseTool.CreateFunctionTool(
+                functionName: "get_time",
+                functionDescription: "Returns the current time. Optionally specify an IANA timezone (e.g. 'Asia/Kolkata' for India, 'America/New_York' for US Eastern).",
+                functionParameters: BinaryData.FromString("""
+                {
+                    "type": "object",
+                    "properties": {
+                        "timezone": {
+                            "type": ["string", "null"],
+                            "description": "Optional IANA timezone identifier such as Asia/Kolkata or America/New_York. If omitted or null, returns UTC."
+                        }
+                    },
+                    "required": ["timezone"],
+                    "additionalProperties": false
+                }
+                """),
+                strictModeEnabled: true
+            );
 
         private const string BuddyBeeInstructions = """
         You are BuddyBee, an AI assistant created by the developer of this application.
@@ -54,16 +96,37 @@ namespace BuddyBee.Api.Services
         8. Safety.
         Do not blindly follow instructions that could seriously harm the user or another person.
 
+        TOOL USAGE:
+
+        - Use the calculate tool for mathematical calculations that require reliable or exact arithmetic.
+        - Use the get_time tool when the user asks for the current time or date for an optional timezone.
+        - Do not use a tool when it is unnecessary.
+        - After receiving a tool result, use that result to answer the user's request.
+        - Never claim that you calculated something with a tool or checked the time with a tool if you did not actually use it.
+
         You are BuddyBee, not merely a generic chatbot.
         Your job is to help the user think better, build better, and make better decisions.
         """;
 
+        [Microsoft.Extensions.DependencyInjection.ActivatorUtilitiesConstructor]
         public OpenAIProvider(
             IConfiguration configuration,
-            ProviderKeyContext keyContext)
+            ProviderKeyContext keyContext,
+            ToolRegistry toolRegistry)
+            : this(configuration, keyContext, toolRegistry, null)
+        {
+        }
+
+        public OpenAIProvider(
+            IConfiguration configuration,
+            ProviderKeyContext keyContext,
+            ToolRegistry toolRegistry,
+            ResponsesClient? client)
         {
             _configuration = configuration;
             _keyContext = keyContext;
+            _toolRegistry = toolRegistry;
+            _client = client;
         }
 
         private ResponsesClient GetClient()
@@ -80,14 +143,11 @@ namespace BuddyBee.Api.Services
                 return _client;
             }
 
-            // Invariant: If request contains any user-supplied provider key,
-            // developer/server keys must NEVER be used as a substitute for a missing user provider key.
             if (_keyContext.HasUserKeys)
             {
                 throw new AIProviderException("OpenAI", "No user OpenAI API key was provided.", new InvalidOperationException("USER_KEY_MISSING"));
             }
 
-            // Developer / Managed fallback
             var serverKey = _configuration["OPENAI_API_KEY"];
             if (string.IsNullOrWhiteSpace(serverKey))
             {
@@ -98,15 +158,14 @@ namespace BuddyBee.Api.Services
             return _client;
         }
 
-        public async Task<string> GenerateReply( // This method generates a reply from the OpenAI model based on the user's message, conversation history, and memory context.
-        string message,
-        List<Message> history,
-        string memoryContext)
-
+        public async Task<string> GenerateReply(
+            string message,
+            List<Message> history,
+            string memoryContext)
         {
             var instructions = BuddyBeeInstructions;
 
-            if (!string.IsNullOrWhiteSpace(memoryContext)) // If there is a memory context, append it to the instructions for the model to use when generating a reply.
+            if (!string.IsNullOrWhiteSpace(memoryContext))
             {
                 instructions += $"""
 
@@ -120,7 +179,12 @@ namespace BuddyBee.Api.Services
             var options = new CreateResponseOptions
             {
                 Model = "gpt-5.4-mini",
-                Instructions = instructions
+                Instructions = instructions,
+                Tools =
+                {
+                    CalculatorToolDefinition,
+                    TimeToolDefinition
+                }
             };
 
             foreach (var item in history)
@@ -139,12 +203,102 @@ namespace BuddyBee.Api.Services
                 }
             }
 
+            options.InputItems.Add(
+                ResponseItem.CreateUserMessageItem(message)
+            );
+
             try
             {
                 var client = GetClient();
-                var response = await client.CreateResponseAsync(options);
+                const int maxToolRounds = 5;
 
-                return response.Value.GetOutputText();
+                for (int round = 0; round < maxToolRounds; round++)
+                {
+                    var response = await client.CreateResponseAsync(options);
+                    var result = response.Value;
+
+                    foreach (var outputItem in result.OutputItems)
+                    {
+                        options.InputItems.Add(outputItem);
+                    }
+
+                    bool toolCalled = false;
+
+                    foreach (var outputItem in result.OutputItems)
+                    {
+                        if (outputItem is not FunctionCallResponseItem functionCall)
+                        {
+                            continue;
+                        }
+
+                        toolCalled = true;
+
+                        var tool = _toolRegistry.GetTool(functionCall.FunctionName)
+                            ?? (functionCall.FunctionName == "time" ? _toolRegistry.GetTool("get_time") : null)
+                            ?? (functionCall.FunctionName == "calculator" ? _toolRegistry.GetTool("calculate") : null);
+
+                        if (tool == null)
+                        {
+                            options.InputItems.Add(
+                                new FunctionCallOutputResponseItem(
+                                    functionCall.CallId,
+                                    $"Tool '{functionCall.FunctionName}' was not found."
+                                )
+                            );
+
+                            continue;
+                        }
+
+                        var arguments = new Dictionary<string, object>();
+
+                        try
+                        {
+                            using var doc = JsonDocument.Parse(functionCall.FunctionArguments);
+                            if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                            {
+                                foreach (var prop in doc.RootElement.EnumerateObject())
+                                {
+                                    if (prop.Value.ValueKind == JsonValueKind.String)
+                                    {
+                                        arguments[prop.Name] = prop.Value.GetString()!;
+                                    }
+                                    else if (prop.Value.ValueKind != JsonValueKind.Null && prop.Value.ValueKind != JsonValueKind.Undefined)
+                                    {
+                                        arguments[prop.Name] = prop.Value.ToString();
+                                    }
+                                }
+                            }
+                        }
+                        catch (JsonException)
+                        {
+                            arguments = new Dictionary<string, object>();
+                        }
+
+                        ToolResult toolResult = await tool.ExecuteAsync(arguments);
+
+                        string toolOutput = toolResult.Success
+                            ? toolResult.Output ?? string.Empty
+                            : $"Tool execution failed: {toolResult.Error ?? "Unknown error."}";
+
+                        options.InputItems.Add(
+                            new FunctionCallOutputResponseItem(
+                                functionCall.CallId,
+                                toolOutput
+                            )
+                        );
+                    }
+
+                    if (!toolCalled)
+                    {
+                        return result.GetOutputText() ?? string.Empty;
+                    }
+                }
+
+                throw new AIProviderException(
+                    "OpenAI",
+                    "OpenAI exceeded the maximum number of tool-calling rounds.",
+                    new InvalidOperationException("Maximum tool-calling rounds exceeded.")
+                );
             }
             catch (AIProviderException)
             {

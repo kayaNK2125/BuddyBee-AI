@@ -30,6 +30,9 @@ const MainLayout: React.FC = () => {
 
       {/* 5. AI Provider Settings Modal */}
       <SettingsModal isOpen={isSettingsOpen} onClose={closeSettings} />
+
+      {/* Version Indicator */}
+      <span className="version-label">v1.1.0</span>
     </div>
   );
 };
