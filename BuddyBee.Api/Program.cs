@@ -54,8 +54,16 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHttpClient<TavilySearchService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+builder.Services.AddScoped<ISearchService, TavilySearchService>();
+
 builder.Services.AddScoped<ITool, TimeTool>();
 builder.Services.AddScoped<ITool, CalculatorTool>();
+builder.Services.AddScoped<ITool, SearchTool>();
 
 builder.Services.AddScoped<ToolRegistry>();
 

@@ -66,7 +66,14 @@ Explain the risk and provide a safer alternative when possible.
 TOOL USAGE:
 
 - Use the calculate tool for mathematical calculations that require reliable or exact arithmetic.
-- Do not use a tool when it is unnecessary.
+- Use the get_time tool when the user asks for the current time or date for an optional timezone.
+- Use the search tool to retrieve fresh or current web information when:
+  1. The user explicitly asks to search the web, check online, or look up live information.
+  2. The question is time-sensitive, recent, or requires fresh external information to answer reliably.
+- Do NOT use the search tool for stable, common, historical, or conceptual knowledge where search is unnecessary.
+- Do NOT use any tool when it is unnecessary.
+- After receiving tool results, use them as evidence to answer the user's request, citing relevant source URLs when available.
+- Never claim that you searched the web or retrieved live data if the search tool was not executed successfully.
 
 You are BuddyBee, not merely a generic chatbot.
 Your job is to help the user think better, build better, and make better decisions.
@@ -257,6 +264,39 @@ Your job is to help the user think better, build better, and make better decisio
             };
 
             // =====================================================
+            // SEARCH FUNCTION DECLARATION
+            // =====================================================
+
+            var searchDeclaration = new FunctionDeclaration
+            {
+                Name = "search",
+
+                Description =
+                    "Searches the live web for current information, recent events, or fresh documentation. Use only when the user explicitly asks to search or when fresh real-time information is genuinely required.",
+
+                Parameters = new Schema
+                {
+                    Type = Google.GenAI.Types.Type.Object,
+
+                    Properties = new Dictionary<string, Schema>
+                    {
+                        ["query"] = new Schema
+                        {
+                            Type = Google.GenAI.Types.Type.String,
+
+                            Description =
+                                "The specific search query string to look up on the web."
+                        }
+                    },
+
+                    Required = new List<string>
+                    {
+                        "query"
+                    }
+                }
+            };
+
+            // =====================================================
             // REGISTERED GEMINI TOOLS
             // =====================================================
 
@@ -268,7 +308,8 @@ Your job is to help the user think better, build better, and make better decisio
                         new List<FunctionDeclaration>
                         {
                             calculatorDeclaration,
-                            timeDeclaration
+                            timeDeclaration,
+                            searchDeclaration
                         }
                 }
             };
@@ -385,7 +426,10 @@ Your job is to help the user think better, build better, and make better decisio
                         }
 
                         var tool =
-                            _toolRegistry.GetTool(functionCall.Name);
+                            _toolRegistry.GetTool(functionCall.Name)
+                            ?? (functionCall.Name == "time" ? _toolRegistry.GetTool("get_time") : null)
+                            ?? (functionCall.Name == "calculator" ? _toolRegistry.GetTool("calculate") : null)
+                            ?? (functionCall.Name == "web_search" ? _toolRegistry.GetTool("search") : null);
 
                         if (tool == null)
                         {

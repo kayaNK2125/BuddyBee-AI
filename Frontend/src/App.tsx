@@ -32,7 +32,7 @@ const MainLayout: React.FC = () => {
       <SettingsModal isOpen={isSettingsOpen} onClose={closeSettings} />
 
       {/* Version Indicator */}
-      <span className="version-label">v1.1.0</span>
+      <span className="version-label">v1.2.0</span>
     </div>
   );
 };

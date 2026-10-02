@@ -55,6 +55,26 @@ namespace BuddyBee.Api.Services
                 strictModeEnabled: true
             );
 
+        private static readonly FunctionTool SearchToolDefinition =
+            ResponseTool.CreateFunctionTool(
+                functionName: "search",
+                functionDescription: "Searches the live web for current information, recent events, or fresh documentation. Use only when the user explicitly asks to search or when fresh real-time information is genuinely required.",
+                functionParameters: BinaryData.FromString("""
+                {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The specific search query string to look up on the web."
+                        }
+                    },
+                    "required": ["query"],
+                    "additionalProperties": false
+                }
+                """),
+                strictModeEnabled: true
+            );
+
         private const string BuddyBeeInstructions = """
         You are BuddyBee, an AI assistant created by the developer of this application.
 
@@ -100,9 +120,13 @@ namespace BuddyBee.Api.Services
 
         - Use the calculate tool for mathematical calculations that require reliable or exact arithmetic.
         - Use the get_time tool when the user asks for the current time or date for an optional timezone.
-        - Do not use a tool when it is unnecessary.
-        - After receiving a tool result, use that result to answer the user's request.
-        - Never claim that you calculated something with a tool or checked the time with a tool if you did not actually use it.
+        - Use the search tool to retrieve fresh or current web information when:
+          1. The user explicitly asks to search the web, check online, or look up live information.
+          2. The question is time-sensitive, recent, or requires fresh external information to answer reliably.
+        - Do NOT use the search tool for stable, common, historical, or conceptual knowledge where search is unnecessary.
+        - Do NOT use a tool when it is unnecessary.
+        - After receiving a tool result, use that result to answer the user's request, citing relevant source URLs when available.
+        - Never claim that you calculated something with a tool, checked the time with a tool, or searched the web with a tool if you did not actually use it.
 
         You are BuddyBee, not merely a generic chatbot.
         Your job is to help the user think better, build better, and make better decisions.
@@ -183,7 +207,8 @@ namespace BuddyBee.Api.Services
                 Tools =
                 {
                     CalculatorToolDefinition,
-                    TimeToolDefinition
+                    TimeToolDefinition,
+                    SearchToolDefinition
                 }
             };
 
@@ -235,7 +260,8 @@ namespace BuddyBee.Api.Services
 
                         var tool = _toolRegistry.GetTool(functionCall.FunctionName)
                             ?? (functionCall.FunctionName == "time" ? _toolRegistry.GetTool("get_time") : null)
-                            ?? (functionCall.FunctionName == "calculator" ? _toolRegistry.GetTool("calculate") : null);
+                            ?? (functionCall.FunctionName == "calculator" ? _toolRegistry.GetTool("calculate") : null)
+                            ?? (functionCall.FunctionName == "web_search" ? _toolRegistry.GetTool("search") : null);
 
                         if (tool == null)
                         {
