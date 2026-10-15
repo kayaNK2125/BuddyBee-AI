@@ -1,0 +1,278 @@
+.offline-page {
+  min-height: 100vh;
+  width: 100vw;
+  background-color: var(--color-canvas);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-6);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle ambient background glow */
+.offline-bg-glow {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, rgba(217, 119, 6, 0.02) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.offline-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+  gap: var(--space-6);
+}
+
+/* Brand / Logo block */
+.offline-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.offline-hexagon {
+  width: 52px;
+  height: 52px;
+}
+
+.offline-brand-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Status pill */
+.offline-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--color-amber-glow);
+  text-transform: uppercase;
+}
+
+.offline-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-amber-primary);
+  opacity: 0.8;
+}
+
+/* Main heading */
+.offline-heading {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* Sub-text */
+.offline-subtext {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  max-width: 480px;
+  margin: 0;
+}
+
+/* "What we're working toward" section */
+.offline-roadmap {
+  width: 100%;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: left;
+}
+
+.offline-roadmap-title {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.offline-roadmap-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.offline-roadmap-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.offline-roadmap-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-2);
+  border: 1px solid var(--color-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.offline-roadmap-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.offline-roadmap-item-title {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.offline-roadmap-item-desc {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--color-text-tertiary);
+  line-height: 1.5;
+}
+
+/* Actions */
+.offline-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.offline-btn-primary {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 200px;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-amber-primary);
+  color: var(--color-text-inverse);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.offline-btn-primary:hover {
+  background-color: var(--color-amber-glow);
+  box-shadow: var(--shadow-amber-glow);
+}
+
+.offline-btn-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.offline-btn-label {
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* Footer */
+.offline-footer {
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-5);
+  width: 100%;
+  text-align: center;
+}
+
+.offline-footer-text {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+/* Version label */
+.offline-version {
+  position: fixed;
+  bottom: max(6px, env(safe-area-inset-bottom, 6px));
+  right: max(10px, env(safe-area-inset-right, 10px));
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+  z-index: 10;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .offline-content {
+    gap: var(--space-5);
+  }
+
+  .offline-heading {
+    font-size: 1.75rem;
+  }
+
+  .offline-subtext {
+    font-size: 0.93rem;
+  }
+
+  .offline-roadmap {
+    padding-top: var(--space-5);
+  }
+
+  .offline-btn-primary {
+    width: auto;
+    max-width: 100%;
+    justify-content: center;
+  }
+}

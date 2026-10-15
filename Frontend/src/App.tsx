@@ -6,7 +6,12 @@ import { Sidebar } from './components/layout/Sidebar';
 import { ChatContainer } from './components/chat/ChatContainer';
 import { ChrysalisCanvas } from './components/three/ChrysalisCanvas';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { OfflinePage } from './components/offline/OfflinePage';
 import './App.css';
+
+// Set to true to display the temporary offline landing page.
+// Revert to false to restore the full chat experience.
+const MAINTENANCE_MODE = true;
 
 const MainLayout: React.FC = () => {
   const { status, isSidebarOpen, setSidebarOpen, conversationId, isSettingsOpen, closeSettings } = useConversation();
@@ -38,6 +43,10 @@ const MainLayout: React.FC = () => {
 };
 
 export function App() {
+  if (MAINTENANCE_MODE) {
+    return <OfflinePage />;
+  }
+
   return (
     <ConversationProvider>
       <MainLayout />
