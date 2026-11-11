@@ -1,12 +1,10 @@
-﻿# BuddyBee AI
+# BuddyBee AI
 
 **An open-source, self-hostable AI assistant framework built around interchangeable AI providers, persistent memory, and practical tools.**
 
-[Live Demo](https://buddy-bee-ai.vercel.app/)
+> **Status:** Public v1.2.0 · The hosted demo is currently offline; BuddyBee is a self-host only project.
 
-BuddyBee is designed as an AI assistant environment rather than another standalone AI model. It provides a structured application layer around external AI providers, allowing the provider, memory, tools, and persistence layers to work together inside one assistant.
-
-> **Status:** Public v1.0.0
+BuddyBee is designed as an extensible AI assistant environment rather than a wrapper around a single model. It provides a structured application layer that decouples model providers, conversational memory, tools, and persistence, allowing each component to operate and evolve independently.
 
 ---
 
@@ -14,7 +12,7 @@ BuddyBee is designed as an AI assistant environment rather than another standalo
 
 BuddyBee is an independent AI assistant project built with a replaceable provider architecture.
 
-Instead of tying the entire application to one AI provider, BuddyBee separates the assistant from the underlying models:
+Instead of binding the entire application to a single vendor, BuddyBee routes requests through a unified assistant abstraction:
 
 ```text
                          +----------------+
@@ -28,166 +26,214 @@ User --> BuddyBee --> AI Router --+
                          +----------------+
 
                     + Memory
-                    + Tools
-                    + Persistence
+                    + Tools (Calculator, Time, Web Search)
+                    + Persistence (MongoDB / In-Memory)
 ```
 
-This allows BuddyBee's assistant layer to evolve independently of any single model provider.
+This ensures that routing logic, tool execution, and session management remain consistent regardless of which model powers the response.
+
+---
+
+## Screenshots
+
+<!-- Add application screenshots to docs/screenshots/ -->
+_Screenshots will be added in `docs/screenshots/`._
+
+| Chat Interface & 3D Presence | Tool Execution & Search |
+| :---: | :---: |
+| ![Chat Interface](docs/screenshots/chat.png) | ![Tool Execution](docs/screenshots/tools.png) |
+
+---
 
 ## Current Features
 
-### AI Providers
-- Google Gemini
-- OpenAI
-- Provider abstraction through a common AI routing layer
-- Automatic fallback between configured providers for supported transient failures
+### AI Providers & Routing
+- **Google Gemini & OpenAI**: First-class support for Gemini and OpenAI models.
+- **Provider Abstraction**: Unified `IAIProvider` and `AIRouter` interface for response generation.
+- **Automatic Fallback**: Transparent failover between providers on transient failures (quota exhaustion, rate limits, timeouts, or service unavailability). Configuration and authentication errors fail immediately without masking.
 
 ### Memory & Persistence
-- Persistent conversations
-- Memory V1
-- MongoDB persistence
-- In-memory fallback when MongoDB is not configured
-- Conversation and memory separation
+- **Conversation History**: Multi-turn conversational context persisted across sessions.
+- **Memory V1**: User-scoped persistent memory injected as background context for personalized responses.
+- **Dual Persistence Strategy**: MongoDB persistence with an automatic, zero-configuration in-memory fallback when MongoDB is not configured.
 
-### Built-in Tools
-- Calculator
-- Time
-- Automatic tool calling for supported provider flows
+### API Key Modes
+- **Managed Mode**: Uses backend environment variables (`GEMINI_API_KEY`, `OPENAI_API_KEY`) configured on the host server.
+- **Bring Your Own Key (BYOK)**: Users can supply their own Gemini or OpenAI API keys directly in the frontend Settings modal. Keys are held exclusively in browser session storage and transmitted over HTTPS request headers (`X-Gemini-Api-Key`, `X-OpenAI-Api-Key`), never stored in the database.
 
-## API Key Modes
+---
 
-BuddyBee currently supports two provider modes.
+## Built-in Tools
 
-### BuddyBee Managed
+BuddyBee includes an automatic tool calling engine with support for multi-step tool loops across both Gemini and OpenAI:
 
-Use the provider capacity configured by the BuddyBee deployment for a quick start. Availability and limits depend on the deployment configuration.
+### 1. Calculator (`calculate`)
+Evaluates mathematical expressions with arbitrary precision:
+- Uses a custom parser ([`MathExpressionParser`](BuddyBee.Api/MathExpressionParser.cs)) backed by exact fractions via [`BigRational`](BuddyBee.Api/Services/BigRational.cs) and `BigInteger`.
+- Handles addition, subtraction, multiplication, division, right-associative exponentiation (`^`), parentheses, unary operators, percentages (`%`), decimals (e.g. `.5`, `2.5`), and scientific notation (`1.5e3`).
+- Strictly rejects division by zero and invalid syntax with controlled error messaging.
 
-### Bring Your Own Key (BYOK)
+### 2. Time (`get_time`)
+Returns the current UTC date and time or converts to any specified IANA timezone (e.g., `Asia/Kolkata`, `America/New_York`, `Europe/London`).
 
-Connect your own Gemini or OpenAI API key and use your own provider account and quota.
+### 3. Web Search (`search`)
+Performs live internet search powered by the [Tavily Search API](https://tavily.com/):
+- Retrieves fresh documentation, recent events, and current data beyond model training cutoffs.
+- Extracts titles, source URLs, content snippets, and relevance scores.
+- Includes per-request safety controls: throttled to a maximum of 3 searches per turn and deduplicated via in-memory caching.
+- Requires configuring `TAVILY__APIKEY` (or `Tavily:ApiKey`).
 
-BYOK is the recommended mode for users who want direct control over their provider usage and limits.
+---
 
 ## Architecture
 
 ```text
 +--------------------------------+
 |        React Frontend          |
-|       TypeScript + Vite        |
+|    TypeScript + Vite + Three   |
 +---------------+----------------+
                 |
-               HTTPS
+          HTTPS / JSON
                 |
                 v
 +--------------------------------+
 |       ASP.NET Core API         |
-|            .NET 10             |
+|     .NET 10 Web Application    |
+|   Rate Limiter (20 req/min/IP) |
+|   Forwarded Headers Middleware |
 +---------------+----------------+
                 |
                 v
 +--------------------------------+
 |           AI Router            |
-|                                |
-|        Gemini / OpenAI         |
+|       GeminiProvider           |
+|       OpenAIProvider           |
+|       ToolRegistry             |
 +---------------+----------------+
-                |
-                v
-+--------------------------------+
-|      Memory | Tools | Chat     |
-+---------------+----------------+
-                |
-                v
-+--------------------------------+
-|            MongoDB             |
-|     Conversations + Memories   |
-+--------------------------------+
+        |               |
+        v               v
++---------------+ +--------------+
+| Built-in Tools| | Persistence  |
+| - Calculator  | | - MongoDB    |
+| - Time        | | - In-Memory  |
+| - Tavily Search| +--------------+
++---------------+
 ```
 
-The backend uses interfaces for the major application boundaries, including AI providers, conversation storage, memory, and tools.
+---
 
-This keeps provider and persistence implementations replaceable without changing the assistant's core architecture.
+## Quick Start
 
-## API Key & Privacy Model
+### Option 1: Docker Compose (Experimental)
 
-BuddyBee supports user-supplied provider credentials through BYOK mode.
+> **Warning:** The Docker Compose path is experimental, not yet verified end-to-end.
 
-When BYOK is used:
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/kayaNK2125/BuddyBee-AI.git
+   cd BuddyBee-AI
+   ```
 
-- Provider keys are kept in the browser's session storage.
-- Keys are not stored in BuddyBee's conversation database.
-- Keys are sent to the BuddyBee backend through request headers when making provider requests.
-- The backend uses the supplied key for the provider request.
-- Users remain responsible for their provider account, API usage, quotas, and applicable provider terms.
+2. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` to supply at least one provider key (`GEMINI_API_KEY` or `OPENAI_API_KEY`), and optionally `TAVILY__APIKEY`.
 
-BuddyBee does not claim that provider credentials or user data are impossible to access in every deployment configuration. Self-hosters should review and secure their own infrastructure appropriately.
+3. **Start the containers:**
+   ```bash
+   docker compose up
+   ```
+   To also start an optional MongoDB container alongside the API and frontend:
+   ```bash
+   docker compose --profile mongo up
+   ```
 
-## Self-Hosting
+4. **Access BuddyBee:**
+   Open your browser at [http://localhost:5173](http://localhost:5173).
 
-BuddyBee is designed to be self-hostable.
+### Option 2: Local Development
 
-### Backend
+#### Prerequisites
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Node.js](https://nodejs.org/) (v20+ or v22+) & npm
 
-Requirements:
-- .NET 10
-- Gemini and/or OpenAI API credentials
-- MongoDB (optional; the application can use in-memory storage when MongoDB is not configured)
-
-The backend can be configured through environment variables or .NET User Secrets during local development.
-
-Example configuration:
-
-```env
-GEMINI_API_KEY=your_key
-OPENAI_API_KEY=your_key
-
-MongoDb__ConnectionString=your_connection_string
-MongoDb__DatabaseName=BuddyBeeDB
+#### 1. Start Backend API
+```bash
+cd BuddyBee.Api
+dotnet run
 ```
+The API starts at `http://localhost:5168` (HTTP) / `https://localhost:7177` (HTTPS).
 
-### Frontend
-
-The frontend uses Vite.
-
-Set:
-
-```env
-VITE_API_URL=https://your-buddybee-api.example.com
+#### 2. Start Frontend
+```bash
+cd Frontend
+npm install
+npm run dev
 ```
+The Vite development server runs at `http://localhost:5173`.
 
-Then:
+---
+
+## Configuration
+
+BuddyBee reads settings from environment variables or .NET configuration files (`appsettings.json`):
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | Google Gemini API key for managed requests | Empty (BYOK available) |
+| `OPENAI_API_KEY` | OpenAI API key for managed requests | Empty (BYOK available) |
+| `TAVILY__APIKEY` | Tavily API key for live web search tool | Empty (Search tool disabled) |
+| `MongoDb__ConnectionString` | MongoDB connection URI (e.g. `mongodb://localhost:27017` or `mongodb://mongo:27017`) | Empty (uses in-memory store) |
+| `MongoDb__DatabaseName` | MongoDB database name | `BuddyBee` |
+| `Cors__AllowedOrigins` | Comma-separated list of allowed frontend origins | `http://localhost:5173` |
+| `VITE_API_URL` | Backend URL compiled into frontend assets | `http://localhost:8080` (or `http://localhost:5168`) |
+
+### Important Networking & Deployment Notes
+- **`Cors__AllowedOrigins`**: When deploying, set this to the **exact frontend URL** (e.g. `https://your-frontend.example.com` or `http://localhost:5173`), without trailing slashes. Cross-origin browser requests will be rejected if the origin does not match.
+- **`VITE_API_URL`**: Must be reachable from the **user's browser**, not the internal Docker network. Because Vite compiles frontend code to execute in client browsers, using container hostnames like `http://api:8080` will fail. Use `http://localhost:8080` for local Docker setups or your public API URL (e.g. `https://api.yourdomain.com`).
+
+---
+
+## Running Tests
+
+BuddyBee includes a comprehensive xUnit test suite for the calculator engine, expression parser, and arbitrary-precision rational arithmetic:
 
 ```bash
-npm install
+# Run backend tests
+dotnet test
+
+# Run frontend checks
+cd Frontend
+npm run lint
 npm run build
 ```
 
-For local development:
-
-```bash
-npm run dev
-```
+---
 
 ## Tech Stack
 
 ### Frontend
-- React
-- TypeScript
-- Vite
-- Three.js
-- React Markdown
-- Lucide React
+- **React 19** & **TypeScript**
+- **Vite**: Build tooling and development server
+- **Three.js**: Kinetic 3D Chrysalis ambient presence visualizer
+- **React Markdown** & **Remark GFM**: Formatted chat responses
+- **Lucide React**: UI iconography
+- **Oxlint**: High-performance JavaScript/TypeScript linter
 
 ### Backend
-- ASP.NET Core
-- .NET 10
-- C#
-- MongoDB Driver
-- Google GenAI SDK
-- OpenAI SDK
+- **ASP.NET Core (.NET 10)**
+- **Google GenAI SDK** & **OpenAI SDK**
+- **MongoDB.Driver**: Persistence layer
+- **Microsoft.AspNetCore.RateLimiting**: Client IP-based rate limiting (20 requests/minute fixed window)
+- **Microsoft.AspNetCore.HttpOverrides**: Forwarded headers middleware (`X-Forwarded-For`, `X-Forwarded-Proto`)
+- **System.Numerics**: Arbitrary-precision math engine
+
+---
 
 ## Deployment
 
-The current public deployment uses:
+The project was previously deployed on the following stack; the hosted demo is currently offline:
 
 ```text
 Vercel
@@ -202,60 +248,24 @@ MongoDB Atlas
 Gemini / OpenAI
 ```
 
-## Public v1 Scope
-
-BuddyBee v1 focuses on the core assistant foundation:
-
-- AI provider abstraction
-- Chat
-- Memory
-- Persistence
-- Practical tools
-- BYOK
-- Self-hosting
-
-Advanced personal and experimental capabilities are intentionally maintained separately from the public repository.
-
-The public project will evolve based on actual usage, feedback, and contributions rather than exposing private capabilities simply for feature count.
+---
 
 ## Roadmap
 
-Potential future directions include:
+- **Document intelligence**: Upload and reason over PDFs, notes, and structured data.
+- **Grounded web research with citations**: Enhanced source coverage, claim verification, and inline citation synthesis.
+- **Composable tool workflows**: Multi-tool execution pipelines that turn conversational intent into actionable outcomes.
 
-- Additional tools and integrations
-- More provider options
-- Expanded memory capabilities
-- Community contributions
-- Additional self-hosting improvements
+---
 
-The roadmap is intentionally flexible.
+## Open Source & Contributing
 
-## Open Source
+BuddyBee is released under the **GNU Affero General Public License v3.0 (AGPLv3)**. See [LICENSE](LICENSE) for details.
 
-BuddyBee is released under the GNU Affero General Public License v3.0 (AGPLv3).
+Contributions, bug reports, and suggestions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
-See LICENSE for the complete license text.
+---
 
-AGPLv3 allows people to use, study, modify, and redistribute BuddyBee under the license's conditions, including requirements intended to preserve software freedom when modified versions are provided as network services.
+## Disclaimer
 
-## Third-Party Providers
-
-BuddyBee is an independent project.
-
-BuddyBee is not affiliated with, endorsed by, or sponsored by Google, OpenAI, or any other AI provider.
-
-Gemini and OpenAI are third-party services. Users and self-hosters are responsible for complying with the applicable provider terms, usage policies, and billing requirements when using those services.
-
-## Contributing
-
-Contributions, bug reports, ideas, and improvements are welcome.
-
-If you find a problem or have an idea for improving BuddyBee, open an issue or submit a pull request.
-
-## License
-
-Copyright (C) 2026 Mayank Gupta
-
-BuddyBee is licensed under the GNU Affero General Public License v3.0.
-
-See [LICENSE](LICENSE)
+BuddyBee is an independent project and is not affiliated with, endorsed by, or sponsored by Google, OpenAI, or Tavily. Users and self-hosters are responsible for complying with the respective provider terms, usage limits, and billing agreements.

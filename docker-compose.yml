@@ -1,0 +1,41 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: BuddyBee.Api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - TAVILY__APIKEY=${TAVILY__APIKEY:-}
+      - MongoDb__ConnectionString=${MongoDb__ConnectionString:-}
+      - MongoDb__DatabaseName=${MongoDb__DatabaseName:-}
+      - Cors__AllowedOrigins=${Cors__AllowedOrigins:-http://localhost:5173}
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:8
+    profiles:
+      - mongo
+    environment:
+      - MONGO_INITDB_DATABASE=${MongoDb__DatabaseName:-BuddyBee}
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
