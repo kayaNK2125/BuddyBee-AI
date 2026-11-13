@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="BuddyBee.Api/BuddyBee.Api.csproj" />
+  <Project Path="BuddyBee.Tests/BuddyBee.Tests.csproj" />
+</Solution>
+

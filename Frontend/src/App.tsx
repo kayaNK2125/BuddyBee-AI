@@ -9,9 +9,7 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { OfflinePage } from './components/offline/OfflinePage';
 import './App.css';
 
-// Set to true to display the temporary offline landing page.
-// Revert to false to restore the full chat experience.
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
 
 const MainLayout: React.FC = () => {
   const { status, isSidebarOpen, setSidebarOpen, conversationId, isSettingsOpen, closeSettings } = useConversation();
