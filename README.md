@@ -36,14 +36,11 @@ This ensures that routing logic, tool execution, and session management remain c
 
 ## Screenshots
 
-![The empty chat state](docs/screenshots/chat-empty.png)
-*The empty chat state.*
+<p align="center"><img src="docs/screenshots/chat-empty.png" alt="The empty chat state" width="720"><br><em>The empty chat state.</em></p>
 
-![BuddyBee answering an arithmetic question using the calculate tool](docs/screenshots/chat-tool.png)
-*BuddyBee answering an arithmetic question using the calculate tool.*
+<p align="center"><img src="docs/screenshots/chat-tool.png" alt="BuddyBee answering an arithmetic question using the calculate tool" width="720"><br><em>BuddyBee answering an arithmetic question using the calculate tool.</em></p>
 
-![The BYOK settings modal](docs/screenshots/settings-byok.png)
-*The BYOK settings modal.*
+<p align="center"><img src="docs/screenshots/settings-byok.png" alt="The BYOK settings modal" width="420"><br><em>The BYOK settings modal.</em></p>
 
 ---
 
