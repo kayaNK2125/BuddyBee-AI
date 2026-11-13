@@ -36,12 +36,14 @@ This ensures that routing logic, tool execution, and session management remain c
 
 ## Screenshots
 
-<!-- Add application screenshots to docs/screenshots/ -->
-_Screenshots will be added in `docs/screenshots/`._
+![The empty chat state](docs/screenshots/chat-empty.png)
+*The empty chat state.*
 
-| Chat Interface & 3D Presence | Tool Execution & Search |
-| :---: | :---: |
-| ![Chat Interface](docs/screenshots/chat.png) | ![Tool Execution](docs/screenshots/tools.png) |
+![BuddyBee answering an arithmetic question using the calculate tool](docs/screenshots/chat-tool.png)
+*BuddyBee answering an arithmetic question using the calculate tool.*
+
+![The BYOK settings modal](docs/screenshots/settings-byok.png)
+*The BYOK settings modal.*
 
 ---
 
@@ -124,23 +126,50 @@ Performs live internet search powered by the [Tavily Search API](https://tavily.
 
 ## Quick Start
 
-### Option 1: Docker Compose (Experimental)
+### Run locally
+
+```bash
+git clone https://github.com/kayaNK2125/BuddyBee-AI.git
+cd BuddyBee-AI
+```
+
+#### Prerequisites
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Node.js](https://nodejs.org/) (22) & npm
+
+#### 1. Start Backend API
+```bash
+cd BuddyBee.Api
+
+# PowerShell:
+# $env:GEMINI_API_KEY="your_api_key_here"
+# or dotnet user-secrets:
+dotnet user-secrets set "GEMINI_API_KEY" "your_api_key_here"
+
+dotnet run
+```
+The API starts at `http://localhost:5168` (HTTP) / `https://localhost:7177` (HTTPS).
+Optional: set TAVILY_API_KEY (or Tavily:ApiKey via user-secrets) to enable the web search tool.
+
+#### 2. Start Frontend
+```bash
+cd Frontend
+npm install
+npm run dev
+```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Docker Compose (experimental, not verified)
 
 > **Warning:** The Docker Compose path is experimental, not yet verified end-to-end.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/kayaNK2125/BuddyBee-AI.git
-   cd BuddyBee-AI
-   ```
-
-2. **Configure environment variables:**
+1. **Configure environment variables:**
    ```bash
    cp .env.example .env
    ```
    Edit `.env` to supply at least one provider key (`GEMINI_API_KEY` or `OPENAI_API_KEY`), and optionally `TAVILY__APIKEY`.
 
-3. **Start the containers:**
+2. **Start the containers:**
    ```bash
    docker compose up
    ```
@@ -149,29 +178,8 @@ Performs live internet search powered by the [Tavily Search API](https://tavily.
    docker compose --profile mongo up
    ```
 
-4. **Access BuddyBee:**
+3. **Access BuddyBee:**
    Open your browser at [http://localhost:5173](http://localhost:5173).
-
-### Option 2: Local Development
-
-#### Prerequisites
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Node.js](https://nodejs.org/) (v20+ or v22+) & npm
-
-#### 1. Start Backend API
-```bash
-cd BuddyBee.Api
-dotnet run
-```
-The API starts at `http://localhost:5168` (HTTP) / `https://localhost:7177` (HTTPS).
-
-#### 2. Start Frontend
-```bash
-cd Frontend
-npm install
-npm run dev
-```
-The Vite development server runs at `http://localhost:5173`.
 
 ---
 
